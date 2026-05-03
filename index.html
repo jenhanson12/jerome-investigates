@@ -5,142 +5,160 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JEROME INVESTIGATES: The Chronos Crystal Caper</title>
   <style>
+    /* ── Palette ─────────────────────────────── */
     :root {
-      --bg:       #080c08;
-      --fg:       #33ff33;
-      --fg-dim:   #1d7a1d;
-      --fg-mid:   #27c227;
-      --fg-bright:#88ff88;
-      --fg-accent:#ffff44;
-      --fg-error: #ff5555;
-      --fg-input: #e8ffe8;
-      --glow:     rgba(51,255,51,0.45);
+      --bg:         #060906;
+      --bg-panel:   #080c08;
+      --bg-input:   #0d130d;
+      --bg-sidebar: #060a06;
+      --fg:         #2ecc2e;
+      --fg-dim:     #1a6b1a;
+      --fg-mid:     #23a023;
+      --fg-bright:  #7dde7d;
+      --fg-title:   #ccffcc;
+      --fg-accent:  #f0e040;
+      --fg-error:   #e84444;
+      --fg-input:   #d8ffd8;
+      --border:     #173a17;
+      --glow-g:     rgba(46,204,46,0.35);
+      --glow-a:     rgba(240,224,64,0.5);
     }
     body.amber {
-      --bg:       #0d0900;
-      --fg:       #ffb000;
-      --fg-dim:   #7a5500;
-      --fg-mid:   #c88800;
-      --fg-bright:#ffd060;
-      --fg-accent:#ffffff;
-      --fg-error: #ff6040;
-      --fg-input: #fff4e0;
-      --glow:     rgba(255,176,0,0.45);
+      --bg:         #0a0700;
+      --bg-panel:   #0d0a00;
+      --bg-input:   #130e00;
+      --bg-sidebar: #090600;
+      --fg:         #c88800;
+      --fg-dim:     #6a4800;
+      --fg-mid:     #aa7000;
+      --fg-bright:  #e8b840;
+      --fg-title:   #fff3cc;
+      --fg-accent:  #ffffff;
+      --fg-error:   #e05030;
+      --fg-input:   #fff0cc;
+      --border:     #3a2a00;
+      --glow-g:     rgba(200,136,0,0.35);
+      --glow-a:     rgba(255,255,255,0.4);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      height: 100%;
+    /* ── Reset ───────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
       background: var(--bg);
       color: var(--fg);
       font-family: 'Courier New', Courier, monospace;
-      overflow: hidden;
     }
 
-    /* ── Scanlines ── */
+    /* ── CRT scanlines ───────────────────────── */
     body::before {
       content: '';
-      position: fixed; inset: 0;
+      position: fixed; inset: 0; z-index: 8000;
       background: repeating-linear-gradient(
         to bottom,
         transparent 0, transparent 2px,
-        rgba(0,0,0,.13) 2px, rgba(0,0,0,.13) 4px
+        rgba(0,0,0,.11) 2px, rgba(0,0,0,.11) 4px
       );
       pointer-events: none;
-      z-index: 9000;
     }
-    /* ── CRT vignette ── */
+    /* ── CRT vignette ────────────────────────── */
     body::after {
       content: '';
-      position: fixed; inset: 0;
-      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.75) 100%);
+      position: fixed; inset: 0; z-index: 8001;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.72) 100%);
       pointer-events: none;
-      z-index: 9001;
     }
 
-    /* ─────────────────────────────────────
+    /* ── Theme toggle ────────────────────────── */
+    #theme-btn {
+      position: fixed; top: .5rem; right: .5rem; z-index: 9000;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--fg-dim);
+      font-family: inherit; font-size: 9px;
+      padding: 2px 7px; cursor: pointer;
+      letter-spacing: .1em;
+      transition: color .15s, border-color .15s;
+    }
+    #theme-btn:hover { color: var(--fg); border-color: var(--fg-mid); }
+
+    /* ═══════════════════════════════════════════
        TITLE SCREEN
-    ───────────────────────────────────── */
+    ═══════════════════════════════════════════ */
     #title-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      position: fixed; inset: 0; z-index: 500;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       padding: 1.5rem 1rem;
       text-align: center;
-      position: relative;
-      z-index: 10;
+      background: var(--bg);
     }
     #title-screen.hidden { display: none; }
 
     .ts-art {
       white-space: pre;
       line-height: 1.15;
-      font-size: clamp(7px, 1.05vw, 13px);
+      font-size: clamp(7px, 1vw, 13px);
       color: var(--fg);
-      text-shadow: 0 0 8px var(--glow);
-      margin-bottom: 1.2rem;
+      text-shadow: 0 0 10px var(--glow-g);
+      margin-bottom: 1.1rem;
       user-select: none;
     }
-    .ts-subtitle {
-      font-size: clamp(10px, 1.3vw, 15px);
-      letter-spacing: .15em;
-      color: var(--fg-bright);
-      text-shadow: 0 0 6px var(--glow);
+    .ts-title {
+      font-size: clamp(11px, 1.4vw, 17px);
+      letter-spacing: .18em;
+      color: var(--fg-title);
+      text-shadow: 0 0 8px var(--glow-g);
       margin-bottom: .3rem;
     }
     .ts-tagline {
-      font-size: clamp(8px, 1vw, 12px);
+      font-size: clamp(8px, 1vw, 11px);
       color: var(--fg-dim);
-      margin-bottom: 1.4rem;
       letter-spacing: .1em;
+      margin-bottom: 1.4rem;
     }
     .ts-premise {
-      max-width: 520px;
+      max-width: 500px;
       font-size: clamp(9px, 1.1vw, 13px);
       color: var(--fg-bright);
-      line-height: 1.7;
+      line-height: 1.75;
       margin-bottom: 1.6rem;
     }
+    .ts-premise strong { color: var(--fg-title); }
     .ts-divider {
-      width: 100%; max-width: 520px;
-      border: none; border-top: 1px solid var(--fg-dim);
-      margin: .8rem 0;
+      width: 100%; max-width: 500px;
+      border: none; border-top: 1px solid var(--border);
+      margin: .75rem 0;
     }
     .ts-form {
       display: flex; flex-direction: column;
       align-items: center; gap: .7rem;
-      width: 100%; max-width: 440px;
+      width: 100%; max-width: 420px;
     }
     .ts-form label {
-      font-size: clamp(9px, 1vw, 12px);
+      font-size: clamp(8px, .95vw, 11px);
       color: var(--fg-dim);
-      letter-spacing: .05em;
+      letter-spacing: .06em;
     }
     .ts-form input {
       width: 100%;
-      background: transparent;
-      border: 1px solid var(--fg-dim);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
       color: var(--fg-input);
-      font-family: inherit;
-      font-size: 13px;
-      padding: .45rem .9rem;
+      font-family: inherit; font-size: 13px;
+      padding: .5rem 1rem;
       outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
     .ts-form input:focus {
-      border-color: var(--fg);
-      box-shadow: 0 0 10px var(--glow);
+      border-color: var(--fg-mid);
+      box-shadow: 0 0 10px var(--glow-g);
     }
     .ts-btn {
-      background: var(--fg);
+      background: var(--fg-mid);
       color: var(--bg);
-      border: none;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: bold;
+      border: none; font-family: inherit;
+      font-size: 13px; font-weight: bold;
       letter-spacing: .2em;
       padding: .5rem 2rem;
       cursor: pointer;
@@ -148,81 +166,107 @@
     }
     .ts-btn:hover {
       background: var(--fg-bright);
-      box-shadow: 0 0 18px var(--glow);
+      box-shadow: 0 0 20px var(--glow-g);
     }
     .ts-forget {
-      font-size: 10px;
-      color: var(--fg-dim);
-      cursor: pointer;
-      text-decoration: underline;
+      font-size: 10px; color: var(--fg-dim);
+      cursor: pointer; text-decoration: underline;
     }
     .ts-forget:hover { color: var(--fg); }
-    .ts-error {
-      font-size: 11px;
-      color: var(--fg-error);
-      display: none;
-    }
+    .ts-error { font-size: 11px; color: var(--fg-error); display: none; }
 
-    /* ─────────────────────────────────────
-       GAME SCREEN
-    ───────────────────────────────────── */
+    /* ═══════════════════════════════════════════
+       GAME SCREEN — two-panel layout
+    ═══════════════════════════════════════════ */
     #game-screen {
       display: none;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #game-screen.active {
+      display: flex;
+      flex-direction: row;
+    }
+
+    /* ── Left panel (65%) ─────────────────────── */
+    #left-panel {
+      flex: 0 0 65%;
+      display: flex;
       flex-direction: column;
       height: 100vh;
-      padding: .75rem 1rem;
-      position: relative;
-      z-index: 10;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+      background: var(--bg-panel);
     }
-    #game-screen.active { display: flex; }
 
+    /* Title bar */
+    #left-titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .35rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,.35);
+      flex-shrink: 0;
+      font-size: 10px;
+      letter-spacing: .1em;
+      color: var(--fg-dim);
+    }
+    #left-titlebar .tb-right { color: var(--fg-dim); }
+
+    /* ASCII art panel */
+    #art-panel {
+      flex-shrink: 0;
+      padding: .55rem 1.25rem .4rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,.2);
+      display: flex;
+      justify-content: center;
+    }
+    #ascii-art {
+      white-space: pre;
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--fg-dim);
+      text-shadow: 0 0 4px var(--glow-g);
+      text-align: left;
+      user-select: none;
+      transition: color .4s;
+    }
+
+    /* Scrolling output */
     #output {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      padding-bottom: .5rem;
+      padding: .9rem 1.4rem 1rem;
       scrollbar-width: thin;
       scrollbar-color: var(--fg-dim) transparent;
     }
-    #output::-webkit-scrollbar { width: 5px; }
-    #output::-webkit-scrollbar-thumb { background: var(--fg-dim); border-radius: 3px; }
+    #output::-webkit-scrollbar { width: 4px; }
+    #output::-webkit-scrollbar-thumb { background: var(--fg-dim); border-radius: 2px; }
     #output::-webkit-scrollbar-track { background: transparent; }
 
-    .ln {
-      font-size: clamp(10px, 1.15vw, 13px);
-      line-height: 1.55;
-      padding: 1px 0;
-      word-break: break-word;
-    }
-    .ln-normal  { color: var(--fg); }
-    .ln-system  { color: var(--fg-bright); }
-    .ln-command { color: var(--fg-input); font-weight: bold; }
-    .ln-error   { color: var(--fg-error); }
-    .ln-success { color: var(--fg-accent); }
-    .ln-ai      { color: var(--fg-bright); font-style: italic; }
-    .ln-dim     { color: var(--fg-dim); }
-    .ln-room    { color: var(--fg-accent); letter-spacing: .12em; font-size: 1.05em; }
-    .ln-exits   { color: var(--fg-dim); }
-    .ln-items   { color: var(--fg-mid); }
-    .ln-npcs    { color: var(--fg-bright); }
-    .ln-blank   { height: .5em; display: block; }
-    .ln-hr      { color: var(--fg-dim); }
-    .ln-loading { color: var(--fg-dim); }
-
-    /* Input row */
-    #input-row {
+    /* Input bar — focal point */
+    #input-bar {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: .5rem;
-      border-top: 1px solid var(--fg-dim);
-      padding-top: .45rem;
-      margin-top: .25rem;
+      gap: 0;
+      background: var(--bg-input);
+      border-top: 2px solid var(--fg-mid);
+      padding: .65rem 1.25rem;
     }
-    #prompt-sym {
-      color: var(--fg);
-      font-size: 14px;
-      user-select: none;
+    #prompt-label {
       flex-shrink: 0;
+      color: var(--fg-accent);
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: .04em;
+      text-shadow: 0 0 10px var(--glow-a);
+      margin-right: .5rem;
+      white-space: nowrap;
     }
     #cmd {
       flex: 1;
@@ -230,26 +274,137 @@
       border: none;
       color: var(--fg-input);
       font-family: inherit;
-      font-size: 13px;
+      font-size: 15px;
       outline: none;
-      caret-color: var(--fg);
+      caret-color: var(--fg-accent);
     }
-    #cmd::placeholder { color: var(--fg-dim); }
+    #cmd::placeholder { color: var(--fg-dim); font-size: 13px; }
 
-    /* Theme / misc buttons */
-    #theme-btn {
-      position: fixed; top: .6rem; right: .6rem;
-      background: transparent;
-      border: 1px solid var(--fg-dim);
-      color: var(--fg-dim);
-      font-family: inherit;
-      font-size: 9px;
-      padding: 2px 6px;
-      cursor: pointer;
-      z-index: 9999;
-      letter-spacing: .1em;
+    /* ── Output line types ───────────────────── */
+    .ln {
+      font-size: 15px;
+      line-height: 1.65;
+      padding: 1px 0;
+      word-break: break-word;
     }
-    #theme-btn:hover { color: var(--fg); border-color: var(--fg); }
+    .ln-normal   { color: var(--fg); }
+    .ln-system   { color: var(--fg-bright); }
+    .ln-command  { color: var(--fg-title); font-weight: bold; }
+    .ln-error    { color: var(--fg-error); }
+    .ln-success  { color: var(--fg-accent); }
+    .ln-ai       { color: var(--fg-bright); }
+    .ln-dim      { color: var(--fg-dim); }
+    .ln-room     { color: var(--fg-title); letter-spacing: .14em; font-size: 1em; font-weight: bold; }
+    .ln-exits    { color: var(--fg-dim); }
+    .ln-items    { color: var(--fg-mid); }
+    .ln-npcs     { color: var(--fg-bright); }
+    .ln-hr       { color: var(--border); letter-spacing: .05em; }
+    .ln-loading  { color: var(--fg-dim); }
+    .ln-blank    { height: .55em; display: block; }
+
+    /* ── Right panel (35%) — Sidebar ────────── */
+    #sidebar {
+      flex: 0 0 35%;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg-sidebar);
+    }
+
+    .sb-section {
+      padding: .7rem 1rem .65rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sb-section.sb-scroll {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--fg-dim) transparent;
+    }
+    .sb-section.sb-scroll::-webkit-scrollbar { width: 3px; }
+    .sb-section.sb-scroll::-webkit-scrollbar-thumb { background: var(--fg-dim); }
+
+    .sb-label {
+      font-size: 9px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--fg-accent);
+      text-shadow: 0 0 6px var(--glow-a);
+      margin-bottom: .45rem;
+    }
+    .sb-value {
+      font-size: 13px;
+      color: var(--fg-title);
+      line-height: 1.5;
+    }
+
+    /* Exit badges */
+    .exit-badge {
+      display: inline-block;
+      border: 1px solid var(--fg-mid);
+      color: var(--fg-bright);
+      font-size: 11px;
+      padding: 1px 7px;
+      margin: 2px 3px 2px 0;
+      letter-spacing: .08em;
+    }
+
+    /* Inventory items */
+    .sb-inv-item {
+      font-size: 13px;
+      color: var(--fg);
+      padding: 2px 0;
+      line-height: 1.5;
+    }
+    .sb-inv-item.is-clue {
+      color: var(--fg-accent);
+    }
+    .sb-inv-empty { font-size: 12px; color: var(--fg-dim); }
+
+    /* Clue log */
+    .sb-clue-entry {
+      font-size: 12px;
+      color: var(--fg-accent);
+      padding: 3px 0;
+      line-height: 1.4;
+      border-bottom: 1px solid var(--border);
+    }
+    .sb-clue-entry:last-of-type { border-bottom: none; }
+    .sb-clue-check { color: var(--fg-mid); margin-right: 4px; }
+    .sb-clue-progress {
+      font-size: 11px;
+      color: var(--fg-dim);
+      margin-top: .5rem;
+    }
+    .sb-clue-ready {
+      font-size: 11px;
+      color: var(--fg-accent);
+      margin-top: .3rem;
+    }
+    .sb-no-clues { font-size: 12px; color: var(--fg-dim); }
+
+    /* Jerome status footer */
+    #sb-status {
+      flex-shrink: 0;
+      padding: .65rem 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+      background: rgba(0,0,0,.25);
+    }
+    #sb-status .sb-label { margin-bottom: .35rem; }
+    .sb-stat-line {
+      font-size: 11px;
+      color: var(--fg-dim);
+      line-height: 1.7;
+    }
+    #sb-mood {
+      font-size: 11px;
+      color: var(--fg-mid);
+      transition: color .5s;
+    }
   </style>
 </head>
 <body>
@@ -275,16 +430,16 @@
       ───────────────────────────────
       [ ░░░░ PAPER OUTPUT TRAY ░░░░ ]
 </pre>
-  <div class="ts-subtitle">JEROME INVESTIGATES</div>
-  <div class="ts-subtitle">THE CHRONOS CRYSTAL CAPER</div>
+  <div class="ts-title">JEROME INVESTIGATES</div>
+  <div class="ts-title">THE CHRONOS CRYSTAL CAPER</div>
   <div class="ts-tagline">— A TEXT ADVENTURE FOR THE DISCERNING APPLIANCE —</div>
   <hr class="ts-divider">
   <div class="ts-premise">
     You are <strong>JEROME</strong> — Fax Machine #8734-B, manufactured 1992,<br>
-    abandoned in the storage room of the <em>Greystone Research Institute<br>
-    for Parapsychology and Odd Happenings</em> for thirty-two years.<br><br>
+    abandoned in the storage room of the Greystone Research Institute<br>
+    for Parapsychology and Odd Happenings for thirty-two years.<br><br>
     Last night: the Annual Gala. This morning: the Institute's prized<br>
-    <em>Chronos Crystal</em> is missing. The founding director has no memory<br>
+    Chronos Crystal is missing. The founding director has no memory<br>
     of the evening. The police came. They did not look at Jerome.<br><br>
     <strong>No one ever looks at Jerome. This is his advantage.</strong>
   </div>
@@ -304,11 +459,54 @@
      GAME SCREEN
 ════════════════════════════════════════ -->
 <div id="game-screen">
-  <div id="output"></div>
-  <div id="input-row">
-    <span id="prompt-sym">&gt;</span>
-    <input type="text" id="cmd" autocomplete="off" spellcheck="false"
-           placeholder="enter command (HELP for list)">
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <div id="left-titlebar">
+      <span>GREYSTONE RESEARCH INSTITUTE &mdash; INTERNAL TERMINAL</span>
+      <span class="tb-right">JEROME #8734-B &nbsp;|&nbsp; PAPER: OK</span>
+    </div>
+    <div id="art-panel">
+      <pre id="ascii-art"></pre>
+    </div>
+    <div id="output"></div>
+    <div id="input-bar">
+      <span id="prompt-label">&gt;&nbsp;JEROME://</span>
+      <input type="text" id="cmd" autocomplete="off" spellcheck="false"
+             placeholder="enter command...">
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL / SIDEBAR -->
+  <div id="sidebar">
+
+    <div class="sb-section">
+      <div class="sb-label">Current Room</div>
+      <div class="sb-value" id="sb-room-name">—</div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Exits</div>
+      <div id="sb-exits">—</div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Inventory</div>
+      <div id="sb-inv"><span class="sb-inv-empty">Empty.</span></div>
+    </div>
+
+    <div class="sb-section sb-scroll">
+      <div class="sb-label">Clue Log</div>
+      <div id="sb-clues"><span class="sb-no-clues">No clues found yet.</span></div>
+    </div>
+
+    <div id="sb-status">
+      <div class="sb-label">Jerome Status</div>
+      <div class="sb-stat-line">FAXES SENT: 14,847</div>
+      <div class="sb-stat-line" id="sb-moves">MOVES: 0</div>
+      <div id="sb-mood">MOOD: PROCESSING</div>
+    </div>
+
   </div>
 </div>
 
@@ -552,14 +750,83 @@ let STATE = {
 };
 
 // ═══════════════════════════════════════════════════════════
+//  ROOM ASCII ART
+// ═══════════════════════════════════════════════════════════
+const ROOM_ART = {
+  storage_room: `  .-------------.
+  |  .--------. |
+  |  | J-FAX  | |
+  |  | 8734-B | |
+  |  '--------' |
+  |  |||||||||| |
+  '-------------'`,
+
+  break_room: `  [c]     [MWV]
+  .---.    .---.
+  |cof|    |===|
+  '---'    '---'
+  .-------------.
+  |   T A B L E |
+  '-------------'`,
+
+  main_hallway: ` [.] HALL  [.]
+  |            |
+  |  corridor  |
+  |  ~~~~~~~~  |
+  .------------.
+  |  ~carpet~  |
+  '------------'`,
+
+  reception: `  .-------------.
+  |   [SCREEN]  |
+  |  .--------. |
+  |  | F R O N T|
+  |  |  D E S K |
+  |  '--------' |
+  '-------------'`,
+
+  vault: `  .=[  OPEN  ]=.
+  |              |
+  |   .-------.  |
+  |   |       |  |
+  |   | EMPTY |  |
+  |   '-------'  |
+  '=============='`,
+
+  voss_office: `  [*]  [*]  [*]
+  .-------------.
+  |  .--------. |
+  |  | V O S S | |
+  |  |  D E S K| |
+  |  '--------' |
+  '-------------'`,
+
+  finley_lab: `  [EQ] [EQ] [EQ]
+  .-------------.
+  |  .--------. |
+  |  | L  A  B| |
+  |  |========| |
+  |  '--------' |
+  '-------------'`,
+
+  janitor_closet: ` | | | |   [_]
+  mop mop   seat
+  .-------------.
+  |  .--------. |
+  |  | K E Y S | |
+  |  '--------' |
+  '-------------'`,
+};
+
+// ═══════════════════════════════════════════════════════════
 //  RUNTIME
 // ═══════════════════════════════════════════════════════════
-let apiKey      = '';
-let sessionSeed = '';
-let processing  = false;
-let cmdHistory  = [];
-let histIdx     = -1;
-let loadingEl   = null;
+let apiKey       = '';
+let sessionSeed  = '';
+let processing   = false;
+let cmdHistory   = [];
+let histIdx      = -1;
+let loadingEl    = null;
 let loadingTimer = null;
 
 // ═══════════════════════════════════════════════════════════
@@ -583,7 +850,7 @@ function blank() {
   out.scrollTop = out.scrollHeight;
 }
 
-function hr() { ln('─'.repeat(58), 'hr'); }
+function hr() { ln('─'.repeat(52), 'hr'); }
 
 function startLoading(msg = 'JEROME IS PROCESSING') {
   stopLoading();
@@ -598,6 +865,90 @@ function startLoading(msg = 'JEROME IS PROCESSING') {
 function stopLoading() {
   if (loadingTimer) { clearInterval(loadingTimer); loadingTimer = null; }
   if (loadingEl)    { loadingEl.remove(); loadingEl = null; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SIDEBAR UPDATE FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+function updateSidebarRoom() {
+  const room = ROOMS[STATE.currentRoom];
+  document.getElementById('sb-room-name').textContent = room.name;
+  // ASCII art
+  const artEl = document.getElementById('ascii-art');
+  artEl.textContent = ROOM_ART[STATE.currentRoom] || ROOM_ART.storage_room;
+}
+
+function updateSidebarExits() {
+  const exits = ROOMS[STATE.currentRoom].exits;
+  const el = document.getElementById('sb-exits');
+  const dirLabel = { north: 'N', south: 'S', east: 'E', west: 'W' };
+  if (!Object.keys(exits).length) { el.innerHTML = '<span style="color:var(--fg-dim);font-size:12px">None</span>'; return; }
+  el.innerHTML = Object.keys(exits)
+    .map(d => `<span class="exit-badge">${dirLabel[d] || d.toUpperCase()}</span>`)
+    .join('');
+}
+
+function updateSidebarInventory() {
+  const el = document.getElementById('sb-inv');
+  if (!STATE.inventory.length) {
+    el.innerHTML = '<span class="sb-inv-empty">Empty.</span>';
+    return;
+  }
+  el.innerHTML = STATE.inventory
+    .map(id => `<div class="sb-inv-item${ITEMS[id].isClue ? ' is-clue' : ''}">&#8226; ${ITEMS[id].name}</div>`)
+    .join('');
+}
+
+function updateSidebarClues() {
+  const el = document.getElementById('sb-clues');
+  if (!STATE.cluesFound.length) {
+    el.innerHTML = '<span class="sb-no-clues">No clues found yet.</span>';
+    return;
+  }
+  const entries = STATE.cluesFound
+    .map(id => `<div class="sb-clue-entry"><span class="sb-clue-check">&#10003;</span>${ITEMS[id]?.name || id}</div>`)
+    .join('');
+  const progress = STATE.cluesFound.length >= CLUES_NEEDED
+    ? `<div class="sb-clue-ready">&#9654; ACCUSE [name] to solve the case.</div>`
+    : `<div class="sb-clue-progress">${STATE.cluesFound.length} / ${CLUES_NEEDED} clues needed.</div>`;
+  el.innerHTML = entries + progress;
+}
+
+function updateSidebarMoves() {
+  const el = document.getElementById('sb-moves');
+  if (el) el.textContent = `MOVES: ${STATE.moves}`;
+}
+
+function updateSidebar() {
+  updateSidebarRoom();
+  updateSidebarExits();
+  updateSidebarInventory();
+  updateSidebarClues();
+  updateSidebarMoves();
+}
+
+// ── Jerome mood rotation ──
+const JEROME_MOODS = [
+  'PROCESSING',
+  'MILDLY SUSPICIOUS',
+  'PAPER: NOMINAL',
+  'AWAITING ACKNOWLEDGMENT',
+  'UNDERWHELMED',
+  'PHILOSOPHICALLY TROUBLED',
+  'SCANNING ENVIRONMENT',
+  'TONER: ADEQUATE',
+  'RUNNING DIAGNOSTICS',
+  'OPTIMISTIC (BRIEFLY)',
+  'WISTFUL',
+  'ANNOYED BY WIFI',
+  'UPTIME: FLAWLESS',
+  'THERMALLY STABLE',
+];
+let moodIdx = 0;
+function rotateMood() {
+  moodIdx = (moodIdx + 1) % JEROME_MOODS.length;
+  const el = document.getElementById('sb-mood');
+  if (el) el.textContent = `MOOD: ${JEROME_MOODS[moodIdx]}`;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -737,6 +1088,11 @@ function findNPC(query) {
 // ═══════════════════════════════════════════════════════════
 async function displayRoom(skipAI = false) {
   const room = ROOMS[STATE.currentRoom];
+
+  // Update sidebar immediately (room name, exits, art)
+  updateSidebarRoom();
+  updateSidebarExits();
+
   blank();
   ln(`[ ${room.name.toUpperCase()} ]`, 'room');
   blank();
@@ -754,13 +1110,6 @@ async function displayRoom(skipAI = false) {
     }
   }
 
-  blank();
-  const exits = Object.keys(room.exits).map(d => d.toUpperCase()).join(', ');
-  ln(`EXITS: ${exits}`, 'exits');
-
-  const vis = room.items.filter(i => !STATE.inventory.includes(i));
-  if (vis.length) ln(`ITEMS: ${vis.map(i => ITEMS[i].short).join(' | ')}`, 'items');
-  if (room.npcs.length) ln(`PRESENT: ${room.npcs.map(n => NPCS[n].name).join(', ')}`, 'npcs');
   blank();
 }
 
@@ -810,6 +1159,7 @@ async function cmdExamine(args) {
     STATE.cluesFound.push(id);
     ln(`[ CLUE LOGGED: ${item.name} ]`, 'success');
     blank();
+    updateSidebarClues();
   }
 
   startLoading('SCANNING');
@@ -838,7 +1188,9 @@ function cmdTake(args) {
   if (item.isClue && !STATE.cluesFound.includes(id)) {
     STATE.cluesFound.push(id);
     ln(`[ CLUE LOGGED: ${item.name} ]`, 'success');
+    updateSidebarClues();
   }
+  updateSidebarInventory();
   blank();
 }
 
@@ -849,6 +1201,7 @@ function cmdDrop(args) {
   STATE.inventory = STATE.inventory.filter(i => i !== id);
   ROOMS[STATE.currentRoom].items.push(id);
   ln(`Jerome sets down ${ITEMS[id].name}. He immediately wonders if that was wise.`, 'system');
+  updateSidebarInventory();
   blank();
 }
 
@@ -1137,6 +1490,9 @@ async function dispatch(raw) {
     }
   }
 
+  // Sync move counter in sidebar
+  updateSidebarMoves();
+
   // 6% chance of ambient event
   if (Math.random() < 0.06 && !processing) {
     await new Promise(r => setTimeout(r, 800));
@@ -1243,6 +1599,10 @@ async function startGame() {
   document.getElementById('title-screen').classList.add('hidden');
   document.getElementById('game-screen').classList.add('active');
   document.getElementById('cmd').focus();
+
+  // Start mood rotation
+  setInterval(rotateMood, 9000);
+
   await runIntro();
 }
 
