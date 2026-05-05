@@ -1166,7 +1166,7 @@ YOU MUST RESPOND WITH VALID JSON ONLY — no text before or after the JSON block
 
 FIELD RULES:
 - "move": a room id from the exits list only. Accept natural language (go north / head to the lab / I'll check the hallway / north / n).
-- "take" / "drop" / "examine": arrays of item ids from the context. take=room items, drop=inventory items.
+- "take" / "drop" / "examine": arrays of item ids from the context. take=room items, drop=inventory items. ONLY use item ids that appear in the ITEMS VISIBLE or INVENTORY lists. If the player looks at or mentions something that is NOT in those lists (a wall, a tube, a smell, the ceiling, etc.), do NOT put anything in "examine" — instead write Jerome's observation in "text".
 - "talk": npc id if player wants to speak with someone present. Set "talkSaid" to what they said (strip the talk/ask/say verb).
 - "accuse": suspect name string only if player is formally accusing. Null for speculation or questions.
 - "unlockVault": true only if player explicitly uses a key or badge on the vault while in Reception.
@@ -1439,19 +1439,19 @@ async function dispatch(raw) {
   }
 
   // ── Examine narrative (dedicated genExamine call for rich detail) ──
-  if ((result.examine || []).length > 0 && !moved) {
+  // Only enter this branch if the AI flagged a real game item
+  const validExamineIds = (result.examine || []).filter(id => ITEMS[id]);
+  if (validExamineIds.length > 0 && !moved) {
     if (result.text) { ln(parseAI(result.text), 'ai'); blank(); }
-    const examId = result.examine[0];
-    if (ITEMS[examId]) {
-      startLoading('SCANNING');
-      try {
-        const desc = await genExamine(examId);
-        stopLoading();
-        ln(parseAI(desc), 'ai');
-      } catch(e) {
-        stopLoading();
-        ln(ITEMS[examId].facts, 'dim');
-      }
+    const examId = validExamineIds[0];
+    startLoading('SCANNING');
+    try {
+      const desc = await genExamine(examId);
+      stopLoading();
+      ln(parseAI(desc), 'ai');
+    } catch(e) {
+      stopLoading();
+      ln(ITEMS[examId].facts, 'dim');
     }
     blank();
     updateSidebarMoves();
@@ -1466,8 +1466,10 @@ async function dispatch(raw) {
   }
 
   // ── Narrative for all other actions ──
-  if (result.text) {
-    ln(parseAI(result.text), 'ai');
+  // Fallback: if the AI returned empty text and nothing else happened, show a terse Jerome line
+  const narrative = result.text || (moved ? '' : `Jerome processes the input. He produces no output. This is, he notes, a first.`);
+  if (narrative) {
+    ln(parseAI(narrative), moved ? 'dim' : 'ai');
     blank();
   }
 
