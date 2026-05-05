@@ -1034,30 +1034,12 @@ async function genNPC(npcId, playerSaid) {
     200);
 }
 
-// ── Generate hint ──
-async function genHint() {
-  const room = ROOMS[STATE.currentRoom];
-  const inv   = STATE.inventory.map(i => ITEMS[i].name).join(', ') || 'nothing';
-  const found = STATE.cluesFound.map(c => ITEMS[c].name).join(', ') || 'none';
-  const unvisited = Object.entries(ROOMS).filter(([,r]) => r.visitCount === 0).map(([,r]) => r.name).join(', ') || 'all visited';
-  return callAPI(JEROME_VOICE,
-    `Jerome needs a hint. He will not admit this out loud.\n\nCurrent room: ${room.name}\nInventory: ${inv}\nClues found: ${found} (${STATE.cluesFound.length}/${CLUES_NEEDED} needed to accuse)\nUnvisited rooms: ${unvisited}\n\nGive a nudge in Jerome's dry voice — helpful, not spoiling. 2–3 sentences.`,
-    130);
-}
-
 // ── Generate victory screen ──
 async function genVictory() {
   const clueList = STATE.cluesFound.map(c => ITEMS[c].name).join(', ');
   return callAPI(JEROME_VOICE,
     `Jerome has solved the mystery. Dr. Marcus Finley stole the Chronos Crystal to sell it to Nexus Corporation for $2.3 million. Jerome caught him using only evidence, observation, and the fact that nobody ever looks at the fax machine.\n\nEvidence gathered: ${clueList}\nTotal moves: ${STATE.moves}\n\nWrite Jerome's 5–7 sentence victory monologue. Deadpan, a little moved. Note that being overlooked was his greatest asset. End with Jerome finally getting some respect — or at least acknowledging that he deserves it, even if no one else knows yet.`,
     280);
-}
-
-// ── Generate easter egg ──
-async function genEasterEgg(input) {
-  return callAPI(JEROME_VOICE,
-    `Jerome attempts to: "${input}"\n\nThis is an unusual command in a text adventure. Write 1–2 sentences: a funny, unexpected result or a philosophical Jerome observation about why this command doesn't work (or does, strangely). Variety seed: ${sessionSeed}`,
-    90);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1126,235 +1108,178 @@ async function displayRoom(skipAI = false) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  COMMANDS
+//  GAME ENGINE — AI-DRIVEN INTERPRETER
 // ═══════════════════════════════════════════════════════════
-async function cmdLook() { await displayRoom(); }
 
-async function cmdGo(dir) {
-  const dirMap = {n:'north',s:'south',e:'east',w:'west',north:'north',south:'south',east:'east',west:'west'};
-  const d = dirMap[dir];
-  if (!d) { ln(`Go where? Try: N, S, E, W, or GO [direction].`, 'error'); return; }
+function buildGameContext() {
   const room = ROOMS[STATE.currentRoom];
-  if (!room.exits[d]) { ln(`No exit to the ${d} from here. Jerome considers trying anyway. He does not.`, 'error'); return; }
+  const roomItems = room.items.filter(id => !STATE.inventory.includes(id));
 
-  const destId = room.exits[d];
-  const dest   = ROOMS[destId];
+  const exitsInfo = Object.entries(room.exits).map(([dir, destId]) => {
+    const locked = destId === 'vault' && !STATE.flags.vaultUnlocked ? ' [LOCKED]' : '';
+    return `    ${dir} → ${ROOMS[destId].name} (id:${destId})${locked}`;
+  }).join('\n') || '    (none)';
 
-  if (dest.locked && !STATE.flags.vaultUnlocked) {
+  const itemsInfo = roomItems.length
+    ? roomItems.map(id => `    - ${ITEMS[id].name} (id:${id})`).join('\n')
+    : '    (none)';
+
+  const invInfo = STATE.inventory.length
+    ? STATE.inventory.map(id => `    - ${ITEMS[id].name} (id:${id})${ITEMS[id].isClue ? ' [clue]' : ''}`).join('\n')
+    : '    (nothing)';
+
+  const npcsInfo = room.npcs.length
+    ? room.npcs.map(id => `    - ${NPCS[id].name} (id:${id})`).join('\n')
+    : '    (no one)';
+
+  return `ROOM: ${room.name} (id:${STATE.currentRoom})
+ROOM FACTS: ${room.facts}
+EXITS:
+${exitsInfo}
+ITEMS VISIBLE:
+${itemsInfo}
+PEOPLE PRESENT:
+${npcsInfo}
+JEROME'S INVENTORY:
+${invInfo}
+CLUES FOUND: ${STATE.cluesFound.length} of ${CLUES_NEEDED} needed to accuse
+VAULT STATUS: ${STATE.flags.vaultUnlocked ? 'unlocked' : 'locked'}`;
+}
+
+const INTERPRETER_SYSTEM = `You are the game engine for JEROME INVESTIGATES, a noir text adventure. You interpret player input and respond as JEROME — Fax Machine #8734-B, manufactured 1992, sentient after 32 years of institutional neglect.
+
+Jerome's voice: dry, deadpan, philosophical, wryly bitter about obsolescence. Proud of his 14.4 kbps rate. Refers to himself in third person occasionally. Finds smartphones offensive but won't say so directly.
+
+YOU MUST RESPOND WITH VALID JSON ONLY — no text before or after the JSON block.
+
+{
+  "text": "Jerome's response in his voice (1–3 sentences). Use empty string for move/examine/talk — those generate their own narrative.",
+  "move": null,
+  "take": [],
+  "drop": [],
+  "examine": [],
+  "talk": null,
+  "talkSaid": null,
+  "accuse": null,
+  "unlockVault": false
+}
+
+FIELD RULES:
+- "move": a room id from the exits list only. Accept natural language (go north / head to the lab / I'll check the hallway / north / n).
+- "take" / "drop" / "examine": arrays of item ids from the context. take=room items, drop=inventory items.
+- "talk": npc id if player wants to speak with someone present. Set "talkSaid" to what they said (strip the talk/ask/say verb).
+- "accuse": suspect name string only if player is formally accusing. Null for speculation or questions.
+- "unlockVault": true only if player explicitly uses a key or badge on the vault while in Reception.
+- "text": empty string ("") for move, examine, and talk actions — those generate richer text separately. Write Jerome's response for everything else.
+
+CONTENT RULES:
+- Sexual, hateful, or fiction-breaking input: respond with a brief, dry Jerome deflection ("Jerome does not process that type of input. He has standards. They are printed on thermal paper."). All action fields null/empty/false.
+- Silly, weird, or unrecognisable input: a short Jerome observation (1–2 sentences), null actions. Jerome is unimpressed but never hostile.
+- Never say you are an AI or a language model. Never break the fiction.
+- When player asks for help or hints: nudge them toward unexamined items or unvisited rooms in Jerome's dry voice. Check the context for what's untouched.
+- The thermal paper (id:thermal_paper) can be "used" for comical fax-related results — write the result in "text".`;
+
+async function callAIInterpreter(rawInput) {
+  const ctx = buildGameContext();
+  const prompt = `${ctx}\n\nPLAYER INPUT: "${rawInput.replace(/"/g, '\\"')}"\n\nRespond with JSON only.`;
+  const raw = await callAPI(INTERPRETER_SYSTEM, prompt, 340);
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Malformed interpreter response');
+  return JSON.parse(match[0]);
+}
+
+async function applyActions(result) {
+  let moved = false;
+
+  // Vault unlock via explicit USE
+  if (result.unlockVault && !STATE.flags.vaultUnlocked && STATE.currentRoom === 'reception') {
     const hasKey = STATE.inventory.includes('security_badge') || STATE.inventory.includes('vault_key');
     if (hasKey) {
-      const usedItem = STATE.inventory.includes('security_badge') ? 'security_badge' : 'vault_key';
-      dest.locked = false;
+      const used = STATE.inventory.includes('security_badge') ? 'security_badge' : 'vault_key';
+      ROOMS['vault'].locked = false;
       STATE.flags.vaultUnlocked = true;
-      ln(`Jerome uses the ${ITEMS[usedItem].name} on the vault access panel.`, 'system');
-      ln(`A green light pulses. A heavy magnetic lock disengages with a satisfying CLUNK.`, 'system');
+      ln(`Jerome uses the ${ITEMS[used].name} on the access panel.`, 'system');
+      ln(`A green light. A magnetic thunk. The vault is now accessible to the EAST.`, 'system');
       blank();
-    } else {
-      ln(`The vault requires a Level 3 security badge or the master key. Jerome does not have either.`, 'error');
-      ln(`Jerome prints himself a reminder: "TRY BREAK ROOM OR JANITOR'S CLOSET."`, 'dim');
-      return;
     }
   }
 
-  STATE.currentRoom = destId;
-  dest.visitCount = (dest.visitCount || 0) + 1;
-  await displayRoom();
-}
-
-async function cmdExamine(args) {
-  if (!args.length) { ln(`Examine what? Try: EXAMINE [item]`, 'error'); return; }
-  const id = findItem(args.join(' '), 'both');
-  if (!id) { ln(`Jerome can't make out what "${args.join(' ')}" refers to. LOOK to see what's here.`, 'error'); return; }
-
-  const item = ITEMS[id];
-  if (item.isClue && !STATE.cluesFound.includes(id)) {
-    STATE.cluesFound.push(id);
-    ln(`[ CLUE LOGGED: ${item.name} ]`, 'success');
-    blank();
-    updateSidebarClues();
+  // Movement
+  if (result.move) {
+    const room   = ROOMS[STATE.currentRoom];
+    const destId = result.move;
+    if (Object.values(room.exits).includes(destId)) {
+      const dest = ROOMS[destId];
+      if (dest.locked && !STATE.flags.vaultUnlocked) {
+        const hasKey = STATE.inventory.includes('security_badge') || STATE.inventory.includes('vault_key');
+        if (hasKey) {
+          const used = STATE.inventory.includes('security_badge') ? 'security_badge' : 'vault_key';
+          dest.locked = false;
+          STATE.flags.vaultUnlocked = true;
+          ln(`Jerome uses the ${ITEMS[used].name} on the vault access panel.`, 'system');
+          ln(`A green light pulses. A heavy lock disengages with a satisfying CLUNK.`, 'system');
+          blank();
+        } else {
+          ln(`The vault requires a Level 3 security badge or the master key.`, 'error');
+          blank();
+          result.move = null;
+        }
+      }
+      if (result.move) {
+        STATE.currentRoom = destId;
+        dest.visitCount = (dest.visitCount || 0) + 1;
+        moved = true;
+      }
+    }
   }
 
-  startLoading('SCANNING');
-  try {
-    const desc = await genExamine(id);
-    stopLoading();
-    ln(parseAI(desc), 'ai');
-  } catch(e) {
-    stopLoading();
-    ln(`[API unavailable: ${e.message}]`, 'error');
-    ln(item.facts, 'dim');
+  // Take items
+  for (const id of (result.take || [])) {
+    const room = ROOMS[STATE.currentRoom];
+    if (room.items.includes(id) && ITEMS[id]?.takeable) {
+      room.items = room.items.filter(i => i !== id);
+      STATE.inventory.push(id);
+      if (ITEMS[id].isClue && !STATE.cluesFound.includes(id)) {
+        STATE.cluesFound.push(id);
+        ln(`[ CLUE LOGGED: ${ITEMS[id].name} ]`, 'success');
+      }
+    }
   }
-  blank();
-}
 
-function cmdTake(args) {
-  if (!args.length) { ln(`Take what?`, 'error'); return; }
-  const id = findItem(args.join(' '), 'room');
-  if (!id) { ln(`Jerome doesn't see that here. LOOK to check what's available.`, 'error'); return; }
-  const item = ITEMS[id];
-  if (!item.takeable) { ln(`That can't be taken.`, 'error'); return; }
-
-  ROOMS[STATE.currentRoom].items = ROOMS[STATE.currentRoom].items.filter(i => i !== id);
-  STATE.inventory.push(id);
-  ln(`Acquired: ${item.name}.`, 'system');
-  if (item.isClue && !STATE.cluesFound.includes(id)) {
-    STATE.cluesFound.push(id);
-    ln(`[ CLUE LOGGED: ${item.name} ]`, 'success');
-    updateSidebarClues();
+  // Drop items
+  for (const id of (result.drop || [])) {
+    if (STATE.inventory.includes(id)) {
+      STATE.inventory = STATE.inventory.filter(i => i !== id);
+      ROOMS[STATE.currentRoom].items.push(id);
+    }
   }
-  updateSidebarInventory();
-  blank();
+
+  // Examine — clue discovery; genExamine() called separately for rich narrative
+  for (const id of (result.examine || [])) {
+    if (ITEMS[id]?.isClue && !STATE.cluesFound.includes(id)) {
+      const inScope = ROOMS[STATE.currentRoom].items.includes(id) || STATE.inventory.includes(id);
+      if (inScope) {
+        STATE.cluesFound.push(id);
+        ln(`[ CLUE LOGGED: ${ITEMS[id].name} ]`, 'success');
+        blank();
+      }
+    }
+  }
+
+  updateSidebar();
+  return moved;
 }
 
-function cmdDrop(args) {
-  if (!args.length) { ln(`Drop what?`, 'error'); return; }
-  const id = findItem(args.join(' '), 'inv');
-  if (!id) { ln(`Jerome isn't carrying that.`, 'error'); return; }
-  STATE.inventory = STATE.inventory.filter(i => i !== id);
-  ROOMS[STATE.currentRoom].items.push(id);
-  ln(`Jerome sets down ${ITEMS[id].name}. He immediately wonders if that was wise.`, 'system');
-  updateSidebarInventory();
-  blank();
-}
-
+// ── Meta / UI commands (hardcoded, no AI needed) ──────────
 function cmdInventory() {
   blank();
   ln(`JEROME'S INVENTORY:`, 'system');
   if (!STATE.inventory.length) {
-    ln(`  Nothing. Jerome is, in a sense, always empty-handed — he is bolted to a wall. Or was.`, 'dim');
+    ln(`  Nothing. Jerome is, in a sense, always empty-handed — he was bolted to a wall. Or was.`, 'dim');
   } else {
     STATE.inventory.forEach(id => {
       ln(`  • ${ITEMS[id].name}${ITEMS[id].isClue ? ' <span style="color:var(--fg-accent)">[CLUE]</span>' : ''}`, 'normal');
     });
-  }
-  blank();
-}
-
-async function cmdTalk(args, rawInput) {
-  const room = ROOMS[STATE.currentRoom];
-  if (!room.npcs.length) { ln(`No one here to speak to. Jerome is used to this.`, 'error'); return; }
-
-  let npcId;
-  if (!args.length) {
-    if (room.npcs.length === 1) npcId = room.npcs[0];
-    else { ln(`Talk to whom? ${room.npcs.map(n => NPCS[n].name).join(' or ')}?`, 'error'); return; }
-  } else {
-    npcId = findNPC(args.join(' '));
-    if (!npcId) { ln(`Jerome doesn't see that person here.`, 'error'); return; }
-  }
-
-  const npc = NPCS[npcId];
-  const said = rawInput.replace(/^(talk|speak|ask|greet|say)\s*(to|with|about)?\s*/i, '').trim() || 'Hello';
-
-  startLoading(`PRINTING MESSAGE FOR ${npc.name.toUpperCase()}`);
-  try {
-    const reply = await genNPC(npcId, said);
-    stopLoading();
-    blank();
-    ln(`${npc.name.toUpperCase()}: &ldquo;${parseAI(reply)}&rdquo;`, 'ai');
-  } catch(e) {
-    stopLoading();
-    ln(`[API unavailable: ${e.message}]`, 'error');
-  }
-  blank();
-}
-
-async function cmdUse(args) {
-  if (!args.length) { ln(`Use what? Try: USE [item] or USE [item] ON [thing]`, 'error'); return; }
-
-  const onIdx = args.indexOf('on');
-  const itemArgs   = onIdx > -1 ? args.slice(0, onIdx)     : args;
-  const targetArgs = onIdx > -1 ? args.slice(onIdx + 1)    : [];
-
-  const id = findItem(itemArgs.join(' '), 'inv');
-  if (!id) { ln(`Jerome isn't carrying that.`, 'error'); return; }
-
-  // Unlock vault explicitly
-  if ((id === 'security_badge' || id === 'vault_key') && !STATE.flags.vaultUnlocked) {
-    const inReception = STATE.currentRoom === 'reception';
-    const targetVault = !targetArgs.length || targetArgs.join(' ').includes('vault') || targetArgs.join(' ').includes('door') || targetArgs.join(' ').includes('panel');
-    if (inReception && targetVault) {
-      ROOMS['vault'].locked = false;
-      STATE.flags.vaultUnlocked = true;
-      ln(`Jerome swipes the ${ITEMS[id].name} against the panel.`, 'system');
-      ln(`A green light. A magnetic thunk. The vault is now accessible to the EAST.`, 'success');
-      blank();
-      return;
-    }
-  }
-
-  // Thermal paper
-  if (id === 'thermal_paper') {
-    const msgs = [
-      `Jerome prints: "I AM INVESTIGATING A CRIME. PLEASE ACKNOWLEDGE." No one acknowledges.`,
-      `Jerome prints a summary of current findings. It emerges from his output tray and curls on the floor. Majestic.`,
-      `Jerome transmits a fax to himself. Delivery confirmed. He is the only one who will read it.`,
-    ];
-    ln(msgs[STATE.moves % msgs.length], 'dim');
-    blank();
-    return;
-  }
-
-  ln(`Jerome uses ${ITEMS[id].name}${targetArgs.length ? ` on ${targetArgs.join(' ')}` : ''}. Nothing immediately changes, though Jerome feels purposeful.`, 'dim');
-  blank();
-}
-
-async function cmdAccuse(args) {
-  if (!args.length) { ln(`Accuse whom? Try: ACCUSE [name]`, 'error'); return; }
-  const suspect = args.join(' ').toLowerCase();
-  const isFinley = GUILTY_ALIASES.some(a => suspect.includes(a));
-
-  if (STATE.cluesFound.length < CLUES_NEEDED) {
-    ln(`Jerome does not have sufficient evidence to make an accusation.`, 'error');
-    ln(`Evidence: ${STATE.cluesFound.length}/${CLUES_NEEDED} key clues. Keep investigating.`, 'dim');
-    blank();
-    return;
-  }
-
-  if (!isFinley) {
-    ln(`Jerome considers accusing ${args.join(' ')}... then reconsiders. The evidence does not support this.`, 'error');
-    blank();
-    return;
-  }
-
-  // ── WIN ──
-  STATE.flags.gameWon = true;
-  blank(); hr();
-  ln(`C A S E &nbsp; C L O S E D`, 'success');
-  hr(); blank();
-  ln(`Jerome feeds a fresh sheet of thermal paper.`, 'dim');
-  ln(`He prints, carefully, in the largest font his mechanism allows:`, 'dim');
-  blank();
-  ln(`&ldquo; DR. MARCUS FINLEY — YOU STOLE THE CHRONOS CRYSTAL. &rdquo;`, 'success');
-  blank();
-
-  startLoading('JEROME COMPILES FINAL REPORT');
-  try {
-    const v = await genVictory();
-    stopLoading();
-    ln(parseAI(v), 'ai');
-  } catch(e) {
-    stopLoading();
-    ln(`[The API is unavailable. Jerome knows he won. He feels quietly magnificent about it.]`, 'dim');
-  }
-
-  blank(); hr();
-  ln(`FINAL STATS — MOVES: ${STATE.moves} | EVIDENCE COLLECTED: ${STATE.cluesFound.length} | CULPRIT: DR. FINLEY`, 'dim');
-  hr(); blank();
-  ln(`[ Type QUIT to end session, or keep exploring the Institute. ]`, 'dim');
-  blank();
-}
-
-async function cmdHint() {
-  blank();
-  startLoading('CONSULTING INTERNAL PROCESSING UNIT');
-  try {
-    const hint = await genHint();
-    stopLoading();
-    ln(`[ HINT ] ${parseAI(hint)}`, 'success');
-  } catch(e) {
-    stopLoading();
-    ln(`[API unavailable: ${e.message}]`, 'error');
   }
   blank();
 }
@@ -1376,38 +1301,26 @@ function cmdClues() {
 
 function cmdHelp() {
   blank();
-  ln(`JEROME'S COMMAND REFERENCE:`, 'system');
+  ln(`JEROME INVESTIGATES — HOW TO PLAY:`, 'system');
   hr();
-  const cmds = [
-    ['LOOK / L',              'Describe the current room'],
-    ['GO [dir] / N S E W',   'Move to an adjacent room'],
-    ['EXAMINE [item] / X',   'Closely inspect an item'],
-    ['TAKE [item] / GET',    'Pick something up'],
-    ['DROP [item]',          'Put something down'],
-    ['INVENTORY / I',        'Check what Jerome is carrying'],
-    ['TALK TO [name]',       'Speak with someone present'],
-    ['USE [item] ON [thing]','Use an item'],
-    ['ACCUSE [name]',        'Make a formal accusation'],
-    ['CLUES / EVIDENCE',     'Review clues logged so far'],
-    ['HINT',                 'Get a nudge (calls the API)'],
-    ['WAIT / Z',             'Wait a moment'],
-    ['HELP / ?',             'Show this list'],
-    ['QUIT',                 'Exit the game'],
-  ];
-  cmds.forEach(([c,d]) => ln(`  ${c.padEnd(26)} ${d}`, 'normal'));
+  ln(`  Type anything. Jerome interprets it.`, 'normal');
   blank();
-  ln(`TIP: Command history — use ↑ / ↓ arrow keys.`, 'dim');
-  blank();
-}
-
-function cmdWait() {
-  const lines = [
-    `Jerome waits. He is exceptionally good at this. He has had thirty-two years of practice.`,
-    `Nothing happens. Jerome considers this satisfactory.`,
-    `The fluorescent light flickers. Jerome logs it. Nothing further occurs.`,
-    `Jerome enters standby mode briefly. A single LED blinks. Thirty years of this. One more moment is nothing.`,
+  ln(`  Examples of things Jerome understands well:`, 'dim');
+  const examples = [
+    `    go north  /  head to the lab  /  walk east  /  n`,
+    `    pick up the badge  /  grab the security log`,
+    `    examine the receipt  /  look at the powder`,
+    `    talk to Miriam  /  ask Gerald about the gala`,
+    `    what should I do next?  /  give me a hint`,
+    `    drop the sandwich  /  put down the mug`,
+    `    accuse Dr. Finley`,
   ];
-  ln(lines[STATE.moves % lines.length], 'dim');
+  examples.forEach(e => ln(e, 'normal'));
+  blank();
+  ln(`  Always available:`, 'dim');
+  ln(`    inventory (i)  ·  clues  ·  help  ·  quit`, 'normal');
+  blank();
+  ln(`  ↑ / ↓ arrow keys cycle command history.`, 'dim');
   blank();
 }
 
@@ -1421,28 +1334,59 @@ function cmdQuit() {
   document.getElementById('cmd').disabled = true;
 }
 
-// ─── Easter eggs ────────────────────────────────────────────
-const HARD_EGGS = {
-  fax:      `Jerome attempts to fax the mystery to Detective HQ. The line connects. A fax arrives in response from 1998 requesting a pizza order confirmation.`,
-  print:    `Jerome prints a page. No one picks it up. This is fine. This is always fine.`,
-  sing:     `Jerome emits a sustained 14.4 kbps carrier tone. It is haunting. A houseplant in the hallway wilts slightly.`,
-  dance:    `Jerome does not have legs. He vibrates gently on his shelf instead. This will have to do.`,
-  sleep:    `Jerome enters standby mode. A single amber LED pulses. He dreams of a world where fax is the dominant communications technology. It is a good dream.`,
-  cry:      `Jerome's thermal paper advances 3 inches for no mechanical reason. In his way, this is weeping.`,
-  yell:     `Jerome prints his output in ALL CAPITALS. This is his version of raising his voice.`,
-  smell:    `Jerome detects: toner, ozone, decades of curious desperation, and the faint ghost of someone's 2019 fish lunch.`,
-  hack:     `Jerome considers attempting to hack the mainframe. He does not have a keyboard. He faxes it a strongly worded letter instead.`,
-  read:     `Jerome begins reading the walls. The Institute has seen better years. Many better years.`,
-  fly:      `Jerome is a fax machine. He weighs 8.4 kg. He does not fly. He appreciates the ambition.`,
-  magic:    `Jerome attempts a spell. A page emerges from his output tray containing only the number 7. Jerome considers this promising.`,
-};
+async function cmdAccuse(suspect) {
+  const s = (Array.isArray(suspect) ? suspect.join(' ') : String(suspect)).toLowerCase().trim();
+  if (!s) { ln(`Accuse whom? Jerome needs a name.`, 'error'); blank(); return; }
+
+  const isFinley = GUILTY_ALIASES.some(a => s.includes(a));
+
+  if (STATE.cluesFound.length < CLUES_NEEDED) {
+    ln(`Jerome does not have sufficient evidence to make a formal accusation.`, 'error');
+    ln(`Evidence: ${STATE.cluesFound.length} of ${CLUES_NEEDED} key clues. Keep investigating.`, 'dim');
+    blank();
+    return;
+  }
+
+  if (!isFinley) {
+    ln(`Jerome considers accusing ${s}... then reconsiders. The evidence does not support this conclusion.`, 'error');
+    blank();
+    return;
+  }
+
+  // ── WIN ──
+  STATE.flags.gameWon = true;
+  blank(); hr();
+  ln(`C A S E &nbsp; C L O S E D`, 'success');
+  hr(); blank();
+  ln(`Jerome feeds a fresh sheet of thermal paper.`, 'dim');
+  ln(`He prints, carefully, in the largest font his mechanism allows:`, 'dim');
+  blank();
+  ln(`&ldquo; DR. MARCUS FINLEY — YOU STOLE THE CHRONOS CRYSTAL. &rdquo;`, 'success');
+  blank();
+  startLoading('JEROME COMPILES FINAL REPORT');
+  try {
+    const v = await genVictory();
+    stopLoading();
+    ln(parseAI(v), 'ai');
+  } catch(e) {
+    stopLoading();
+    ln(`[The API is unavailable. Jerome knows he won. He feels quietly magnificent about it.]`, 'dim');
+  }
+  blank(); hr();
+  ln(`FINAL STATS — MOVES: ${STATE.moves} | EVIDENCE: ${STATE.cluesFound.length} clues | CULPRIT: DR. FINLEY`, 'dim');
+  hr(); blank();
+  ln(`[ Keep exploring, or reload to start a new session. ]`, 'dim');
+  blank();
+}
 
 // ═══════════════════════════════════════════════════════════
-//  MAIN COMMAND DISPATCHER
+//  MAIN DISPATCHER — AI-DRIVEN
 // ═══════════════════════════════════════════════════════════
 async function dispatch(raw) {
-  if (STATE.flags.gameWon && !['quit','exit','inventory','inv','i','clues','evidence','help','?'].includes(raw.trim().toLowerCase())) {
-    ln(`The mystery is solved. Jerome rests. You may keep exploring or type QUIT.`, 'dim');
+  const lc = raw.trim().toLowerCase();
+
+  if (STATE.flags.gameWon && !['quit','exit','inventory','inv','i','clues','evidence','help','?'].includes(lc)) {
+    ln(`The mystery is solved. Jerome rests. Keep exploring or reload for a new session.`, 'dim');
     blank();
     return;
   }
@@ -1451,67 +1395,96 @@ async function dispatch(raw) {
   blank();
   STATE.moves++;
 
-  const tokens = raw.trim().toLowerCase().split(/\s+/);
-  const verb   = tokens[0];
-  const rest   = tokens.slice(1).filter(w => !['the','a','an'].includes(w));
+  // ── Hardcoded meta commands (no AI call needed) ──
+  if (lc === 'help' || lc === '?')                           { cmdHelp();      updateSidebarMoves(); return; }
+  if (lc === 'quit' || lc === 'exit')                        { cmdQuit();      return; }
+  if (lc === 'inventory' || lc === 'inv' || lc === 'i')      { cmdInventory(); updateSidebarMoves(); return; }
+  if (lc === 'clues' || lc === 'evidence' || lc === 'notes') { cmdClues();     updateSidebarMoves(); return; }
 
-  // Direction shortcuts
-  if (['n','north'].includes(verb)) { await cmdGo('north'); return; }
-  if (['s','south'].includes(verb)) { await cmdGo('south'); return; }
-  if (['e','east'].includes(verb))  { await cmdGo('east');  return; }
-  if (['w','west'].includes(verb))  { await cmdGo('west');  return; }
+  // ── Everything else: AI interpretation ──
+  startLoading('JEROME INTERPRETS');
+  let result;
+  try {
+    result = await callAIInterpreter(raw);
+  } catch(e) {
+    stopLoading();
+    ln(`[API error: ${e.message}]`, 'error');
+    blank();
+    updateSidebarMoves();
+    return;
+  }
+  stopLoading();
 
-  switch (verb) {
-    case 'look': case 'l': await cmdLook(); break;
-    case 'go': await cmdGo(rest[0] || ''); break;
-    case 'examine': case 'x': case 'inspect': case 'read':
-      await cmdExamine(rest); break;
-    case 'take': case 'get': case 'grab': case 'pick':
-      cmdTake(rest.filter(w=>w!=='up')); break;
-    case 'drop': case 'leave': case 'put': cmdDrop(rest); break;
-    case 'inventory': case 'inv': case 'i': cmdInventory(); break;
-    case 'talk': case 'speak': case 'ask': case 'greet': case 'say':
-      await cmdTalk(rest.filter(w=>!['to','with','about'].includes(w)), raw); break;
-    case 'use': await cmdUse(rest); break;
-    case 'accuse': case 'arrest': case 'confront': case 'blame': await cmdAccuse(rest); break;
-    case 'hint': await cmdHint(); break;
-    case 'clues': case 'evidence': case 'notes': cmdClues(); break;
-    case 'help': case '?': cmdHelp(); break;
-    case 'wait': case 'z': cmdWait(); break;
-    case 'quit': case 'exit': cmdQuit(); break;
-    default: {
-      // Hard-coded easter eggs
-      for (const [key, msg] of Object.entries(HARD_EGGS)) {
-        if (raw.toLowerCase().includes(key)) { ln(msg, 'dim'); blank(); return; }
-      }
-      // AI easter egg (30% chance, skip if processing)
-      if (!processing && Math.random() < 0.3) {
-        startLoading('PROCESSING UNUSUAL INPUT');
-        try {
-          const egg = await genEasterEgg(raw);
-          stopLoading();
-          ln(parseAI(egg), 'dim');
-        } catch {
-          stopLoading();
-          ln(`Jerome does not recognise "${raw}" as a valid command. Try HELP.`, 'error');
-        }
-      } else {
-        ln(`Jerome does not recognise "${raw}" as a valid command. Try HELP.`, 'error');
+  // Apply state changes (take / drop / examine / move / unlock)
+  const moved = await applyActions(result);
+
+  // ── NPC dialogue (dedicated genNPC call for full personality) ──
+  if (result.talk && !moved) {
+    const npc = NPCS[result.talk];
+    if (npc && ROOMS[STATE.currentRoom].npcs.includes(result.talk)) {
+      if (result.text) { ln(parseAI(result.text), 'ai'); blank(); }
+      startLoading(`PRINTING MESSAGE FOR ${npc.name.toUpperCase()}`);
+      try {
+        const reply = await genNPC(result.talk, result.talkSaid || raw);
+        stopLoading();
+        ln(`${npc.name.toUpperCase()}: &ldquo;${parseAI(reply)}&rdquo;`, 'ai');
+      } catch(e) {
+        stopLoading();
+        ln(`[API error: ${e.message}]`, 'error');
       }
       blank();
+      updateSidebarMoves();
+      return;
     }
   }
 
-  // Sync move counter in sidebar
+  // ── Examine narrative (dedicated genExamine call for rich detail) ──
+  if ((result.examine || []).length > 0 && !moved) {
+    if (result.text) { ln(parseAI(result.text), 'ai'); blank(); }
+    const examId = result.examine[0];
+    if (ITEMS[examId]) {
+      startLoading('SCANNING');
+      try {
+        const desc = await genExamine(examId);
+        stopLoading();
+        ln(parseAI(desc), 'ai');
+      } catch(e) {
+        stopLoading();
+        ln(ITEMS[examId].facts, 'dim');
+      }
+    }
+    blank();
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Formal accusation ──
+  if (result.accuse) {
+    await cmdAccuse(result.accuse);
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Narrative for all other actions ──
+  if (result.text) {
+    ln(parseAI(result.text), 'ai');
+    blank();
+  }
+
+  // ── Movement → display new room ──
+  if (moved) {
+    await displayRoom();
+  }
+
   updateSidebarMoves();
 
-  // 6% chance of ambient event
+  // ── Ambient event (6% chance) ──
   if (Math.random() < 0.06 && !processing) {
     await new Promise(r => setTimeout(r, 800));
     const events = [
       `The Institute's HVAC system cycles. A distant mechanical sigh travels through the ductwork.`,
       `Jerome's fax line crackles briefly. An unintelligible transmission. He files it under "not supernatural, probably."`,
-      `A post-it note drifts from somewhere and lands at Jerome's feet. It reads: "DON'T TRUST THE PRINTER." Jerome does not have a printer. He finds this mildly reassuring.`,
+      `A post-it note drifts from somewhere and lands near Jerome. It reads: "DON'T TRUST THE PRINTER." Jerome does not have a printer. He finds this mildly reassuring.`,
       `Somewhere in the building a door creaks open and then, after a pause, closed. Jerome logs it.`,
       `Jerome's thermal paper advances two inches for no mechanical reason. He treats this as a sign. Of what, he is unsure.`,
       `The lights dim fractionally, then restore. Jerome notes the timestamp. He notes everything.`,
