@@ -761,71 +761,89 @@ let STATE = {
 //  ROOM ASCII ART
 // ═══════════════════════════════════════════════════════════
 const ROOM_ART = {
-  storage_room: `  [=SHELF==] [=SHELF==]
-  |binders  | |old junk |
-  +---------+ +---------+
-       .-----------.
-       | J E R O M E|
-       |  FAX 8734-B|    DO NOT
-       |  ||||||||  |    UNPLUG
-       '-----------'     (PLEASE)`,
+  storage_room: `  |  [SHELF: binders & manuals]     [SHELF: old junk]   |
+  |  | binders  manuals  docs  |   | junk  relics  ??  |
+  |  |__________________________|   |___________________|
+  |                                                      |
+  |           .--------------------------------.         |
+  |           |   J  E  R  O  M  E            |         |
+  |           |   FAX MACHINE  #8734-B        |         |
+  |           |   ||||||||||||||||||||||||||  |         |
+  |           |   [  PAPER OUTPUT TRAY  ]     |         |
+  |           '--------------------------------'         |
+  |                            DO NOT UNPLUG (PLEASE)   |
+  |______________________________________________________|`,
 
-  break_room: `  [COFFEE]        [MICROWAVE]
-  | brew  |        | ping! |
-  +-------+        +-------+
-  .------------------------------.
-  |   R  O  U  N  D   T  A  B  L  E  |
-  |  [mug]  [chair]  [chair]  [mug]  |
-  '------------------------------'`,
+  break_room: `  | [COFFEE: 14th?]  [BULLETIN: fish notes]  [MICROWAVE] |
+  | |  brew...    |  | passive-aggressive  |  |  ping!! | |
+  | |_____________|  | notes. everywhere.  |  |_________| |
+  |                  '---------------------'               |
+  |   .-----------------------------------------------.   |
+  |   |      R  O  U  N  D     T  A  B  L  E          |   |
+  |   |  [mug]   [chair]   [chair]   [sandwich:half]  |   |
+  |   |_______________________________________________|   |
+  |_____________________________________________________|`,
 
-  main_hallway: `  [DIR.] [DIR.] [DIR.] [DIR.]
-  | :o:  | :o:  | :o:  | :o:  |
-  +------+------+------+------+
-  |                            |
-  |  ~ ~ ~ ~ ~ carpet ~ ~ ~ ~ |
-  |          [STAIN]           |
-  '----------------------------'`,
+  main_hallway: `  | [portrait] [portrait] [portrait] [portrait]        |
+  |  | :o: exp |  | :o: exp |  | :o: exp |  | :o: exp |  |
+  |  |_________|  |_________|  |_________|  |_________|  |
+  |                                                       |
+  |  ~~ carpet  carpet  carpet  carpet  carpet  carpet ~~~|
+  |  ~~~~~~~~~~~~~~~~~~ [STAIN: unexplained] ~~~~~~~~~~~~~|
+  |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+  |          Finley's lab  ←  →  Voss' office            |
+  |______________________________________________________|`,
 
-  reception: `  .============================.
-  | GREYSTONE RESEARCH INST.  |
-  | "THE IMPOSSIBLE FILES     |
-  |  OUT PAPERWORK"           |
-  +============================+
-  | [TERMINAL] [LOG] [CANDY]  |
-  '----------------------------'`,
+  reception: `  |  .------------------------------------------.   |
+  |  | GREYSTONE INST. — "THE IMPOSSIBLE FILLS   |   |
+  |  |             OUT PAPERWORK"                |   |
+  |  '=========================================='   |
+  |  [TERMINAL: vault_log]  [CANDY: ~2015]  [LOG]  |
+  |  |___________________|  |___________|  |____|  |
+  |   .------------------------------------------.  |
+  |   |      F  R  O  N  T     D  E  S  K        |  |
+  |   |__________________________________________|  |
+  |__________________________________________________|`,
 
-  vault: `  .=[ VAULT DOOR: OPEN ]=.
-  | .--------------------. |
-  | |   D I S P L A Y    | |
-  | |   C A S E: EMPTY   | |
-  | |  ~ ~ shards ~ ~ ~  | |
-  | '--------------------' |
-  '========================='`,
+  vault: `  |  .=========[ VAULT DOOR: OPEN ]=========.    |
+  |  |                                           |    |
+  |  |  [=======DISPLAY CASE: OPEN========]     |    |
+  |  |  |  C H R O N O S  C R Y S T A L:  |    |    |
+  |  |  |  S T A T U S:   A B S E N T     |    |    |
+  |  |  |__________________________________|    |    |
+  |  |  *shards*   *shards*   ~~~purple_powder~~|    |
+  |  |___________________________________________|    |
+  |___________________________________________________|`,
 
-  voss_office: `  [DIPLOMA][DIPLOMA][CRYSTALS]
-  [mineral][mineral][mineral ]
-  .------------------------------.
-  |  DR. HELENA VOSS             |
-  |  ====== D E S K ======       |
-  |  [lamp]  [note]  [hands]     |
-  '------------------------------'`,
+  voss_office: `  | [DIPLOMA] [DIPLOMA] [DIPLOMA]   [mineral collection] |
+  | |_______|  |_______|  |_______|    [~][~][~][~][~]  |
+  |                                                       |
+  |   .------------------------------------------------.  |
+  |   |  DR. HELENA VOSS — DIRECTOR & FOUNDER          |  |
+  |   |  [lamp]    [staring at hands]   [sticky note]  |  |
+  |   |  "VAULT: just use badge (Lvl 3). -HV"          |  |
+  |   |________________________________________________|  |
+  |_____________________________________________________|`,
 
-  finley_lab: `  [EQ-NEW!][EQ-NEW!][EQ-NEW!]
-  | shiny  || shiny  || shiny  |
-  +--------++--------++--------+
-  .------------------------------.
-  | LAB    [drawer ajar...]      |
-  | [receipt under book] [CASE] |
-  '------------------------------'`,
+  finley_lab: `  | [EQ: new!] [EQ: new!] [EQ: new!] [EQ: new!]   |
+  | | shiny!  | |no grant | | how??  | | $$$???  |   |
+  | |_________| |_________| |________| |_________|   |
+  |                                                   |
+  | [drawer: ajar....]     [PADDED CASE: corner]      |
+  | | sale_contract:     |  | foam: crystal-shaped  | |
+  | |   DRAFT            |  |_______________________|  |
+  |  [receipt: Quantum Bistro  +N.Chen  9-10:45pm]    |
+  |___________________________________________________|`,
 
-  janitor_closet: `  [VAC][MOPS][VAULT: LAST RESORT]
-  |    ||    ||      key here    |
-  +----++----++------------------+
-  |||  |||  |||            [CHAIR]
-  mop  mop  mop            (zen )
-  .------------------------------.
-  | G E R A L D ' S  D O M A I N|
-  '------------------------------'`,
+  janitor_closet: `  | [===PEGBOARD===================|==VAULT KEY====] |
+  | | VAC_key  | mop_closet | misc  | LAST RESORT!! | |
+  | |__________|____________|_______|_______________| |
+  |                                                    |
+  |  |||    |||    |||               .-------------.   |
+  |  mop    mop    mop               | G  E  R  A  L  D |
+  |  |_|    |_|    |_|               |   ( zen  )  |   |
+  |                    [podcast: ...one_earbud_in]      |
+  |____________________________________________________|`,
 };
 
 // ═══════════════════════════════════════════════════════════
