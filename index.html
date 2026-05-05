@@ -206,8 +206,8 @@
       border-bottom: 1px solid var(--border);
       background: rgba(0,0,0,.35);
       flex-shrink: 0;
-      font-size: 10px;
-      letter-spacing: .1em;
+      font-size: 12px;
+      letter-spacing: .08em;
       color: var(--fg-sub);
     }
     #left-titlebar .tb-right { color: var(--fg-sub); }
@@ -329,22 +329,22 @@
     .sb-section.sb-scroll::-webkit-scrollbar-thumb { background: var(--fg-sub); }
 
     .sb-label {
-      font-size: 9px;
-      letter-spacing: .2em;
+      font-size: 11px;
+      letter-spacing: .18em;
       text-transform: uppercase;
       color: var(--fg-accent);
       text-shadow: 0 0 6px var(--glow-a);
       margin-bottom: .45rem;
     }
     .sb-value {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--fg-title);
       line-height: 1.5;
     }
 
     /* Exit text list */
     .exit-list {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--fg);
       line-height: 1.6;
       letter-spacing: .06em;
@@ -354,7 +354,7 @@
 
     /* Inventory items */
     .sb-inv-item {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--fg);
       padding: 2px 0;
       line-height: 1.5;
@@ -362,11 +362,11 @@
     .sb-inv-item.is-clue {
       color: var(--fg-accent);
     }
-    .sb-inv-empty { font-size: 12px; color: var(--fg-sub); }
+    .sb-inv-empty { font-size: 13px; color: var(--fg-sub); }
 
     /* Clue log */
     .sb-clue-entry {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--fg-accent);
       padding: 3px 0;
       line-height: 1.4;
@@ -375,16 +375,16 @@
     .sb-clue-entry:last-of-type { border-bottom: none; }
     .sb-clue-check { color: var(--fg-accent); margin-right: 4px; }
     .sb-clue-progress {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--fg-sub);
       margin-top: .5rem;
     }
     .sb-clue-ready {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--fg-accent);
       margin-top: .3rem;
     }
-    .sb-no-clues { font-size: 12px; color: var(--fg-sub); }
+    .sb-no-clues { font-size: 13px; color: var(--fg-sub); }
 
     /* Jerome status footer */
     #sb-status {
@@ -396,12 +396,12 @@
     }
     #sb-status .sb-label { margin-bottom: .35rem; }
     .sb-stat-line {
-      font-size: 11px;
+      font-size: 13px;
       color: var(--fg-sub);
-      line-height: 1.7;
+      line-height: 1.65;
     }
     #sb-case {
-      font-size: 11px;
+      font-size: 13px;
       color: var(--fg-sub);
     }
     #sb-case.status-solved   { color: var(--fg-accent); }
@@ -1416,6 +1416,46 @@ async function dispatch(raw) {
   if (lc === 'quit' || lc === 'exit')                        { cmdQuit();      return; }
   if (lc === 'inventory' || lc === 'inv' || lc === 'i')      { cmdInventory(); updateSidebarMoves(); return; }
   if (lc === 'clues' || lc === 'evidence' || lc === 'notes') { cmdClues();     updateSidebarMoves(); return; }
+
+  // ── Movement fast-path: skip interpreter for plain direction commands ──
+  // This cuts latency from ~2 API calls (~25s) down to 1 (~10s).
+  const DIR_MAP = { n:'north', s:'south', e:'east', w:'west',
+                    north:'north', south:'south', east:'east', west:'west' };
+  const moveMatch = lc.match(/^(?:go\s+|walk\s+|move\s+|head\s+(?:to\s+)?)?([nsew]|north|south|east|west)$/);
+  if (moveMatch) {
+    const dir    = DIR_MAP[moveMatch[1]];
+    const room   = ROOMS[STATE.currentRoom];
+    const destId = room.exits[dir];
+    if (!destId) {
+      ln(`No exit to the ${dir} from here. Jerome considers the wall briefly. He does not attempt it.`, 'error');
+      blank();
+      updateSidebarMoves();
+      return;
+    }
+    const dest = ROOMS[destId];
+    if (dest.locked && !STATE.flags.vaultUnlocked) {
+      const hasKey = STATE.inventory.includes('security_badge') || STATE.inventory.includes('vault_key');
+      if (hasKey) {
+        const used = STATE.inventory.includes('security_badge') ? 'security_badge' : 'vault_key';
+        dest.locked = false;
+        STATE.flags.vaultUnlocked = true;
+        ln(`Jerome uses the ${ITEMS[used].name} on the vault access panel.`, 'system');
+        ln(`A green light pulses. A heavy lock disengages with a satisfying CLUNK.`, 'system');
+        blank();
+      } else {
+        ln(`The vault requires a Level 3 security badge or the master key.`, 'error');
+        blank();
+        updateSidebarMoves();
+        return;
+      }
+    }
+    STATE.currentRoom = destId;
+    dest.visitCount = (dest.visitCount || 0) + 1;
+    updateSidebar();
+    await displayRoom();
+    updateSidebarMoves();
+    return;
+  }
 
   // ── Everything else: AI interpretation ──
   startLoading('JEROME INTERPRETS');
