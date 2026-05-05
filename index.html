@@ -400,11 +400,12 @@
       color: var(--fg-sub);
       line-height: 1.7;
     }
-    #sb-mood {
+    #sb-case {
       font-size: 11px;
       color: var(--fg-sub);
-      transition: color .5s;
     }
+    #sb-case.status-solved   { color: var(--fg-accent); }
+    #sb-case.status-ready    { color: var(--fg-bright); }
   </style>
 </head>
 <body>
@@ -502,9 +503,13 @@
 
     <div id="sb-status">
       <div class="sb-label">Jerome Status</div>
-      <div class="sb-stat-line">FAXES SENT: 14,847</div>
+      <div class="sb-stat-line" id="sb-faxes">FAXES SENT: 14,847</div>
+      <div class="sb-stat-line" id="sb-noticed">HUMANS WHO NOTICED HIM TODAY: 0</div>
+      <div class="sb-stat-line" id="sb-rooms">ROOMS VISITED: 1 / 8</div>
+      <div class="sb-stat-line" id="sb-questioned">SUSPECTS QUESTIONED: 0 / 4</div>
+      <div class="sb-stat-line" id="sb-evidence">EVIDENCE LOGGED: 0 / 3</div>
       <div class="sb-stat-line" id="sb-moves">MOVES: 0</div>
-      <div id="sb-mood">MOOD: PROCESSING</div>
+      <div class="sb-stat-line" id="sb-case">CASE STATUS: ACTIVE</div>
     </div>
 
   </div>
@@ -747,6 +752,9 @@ let STATE = {
   cluesFound: [],
   flags: { vaultUnlocked: false, gameWon: false },
   moves: 0,
+  faxesSent: 14847,
+  humanNoticed: 0,
+  npcsQuestioned: [],
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -918,41 +926,49 @@ function updateSidebarClues() {
   el.innerHTML = entries + progress;
 }
 
-function updateSidebarMoves() {
-  const el = document.getElementById('sb-moves');
-  if (el) el.textContent = `MOVES: ${STATE.moves}`;
+function updateStatusPanel() {
+  const roomsVisited = Object.values(ROOMS).filter(r => r.visitCount > 0).length;
+  const totalRooms   = Object.keys(ROOMS).length;
+  const totalNPCs    = Object.keys(NPCS).length;
+  const clueCount    = STATE.cluesFound.length;
+
+  let caseStatus, caseClass;
+  if (STATE.flags.gameWon) {
+    caseStatus = 'CLOSED — FILED UNDER: FINLEY, M.'; caseClass = 'status-solved';
+  } else if (clueCount >= CLUES_NEEDED) {
+    caseStatus = 'CIRCUMSTANTIAL (SUFFICIENT)';      caseClass = 'status-ready';
+  } else if (clueCount === 1) {
+    caseStatus = 'PROMISING';                        caseClass = '';
+  } else if (clueCount > 1) {
+    caseStatus = 'CIRCUMSTANTIAL';                   caseClass = '';
+  } else {
+    caseStatus = 'ACTIVE';                           caseClass = '';
+  }
+
+  const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  set('sb-faxes',     `FAXES SENT: ${STATE.faxesSent.toLocaleString()}`);
+  set('sb-noticed',   `HUMANS WHO NOTICED HIM TODAY: ${STATE.humanNoticed}`);
+  set('sb-rooms',     `ROOMS VISITED: ${roomsVisited} / ${totalRooms}`);
+  set('sb-questioned',`SUSPECTS QUESTIONED: ${STATE.npcsQuestioned.length} / ${totalNPCs}`);
+  set('sb-evidence',  `EVIDENCE LOGGED: ${clueCount} / ${CLUES_NEEDED}`);
+  set('sb-moves',     `MOVES: ${STATE.moves}`);
+
+  const caseEl = document.getElementById('sb-case');
+  if (caseEl) {
+    caseEl.textContent = `CASE STATUS: ${caseStatus}`;
+    caseEl.className   = `sb-stat-line${caseClass ? ' ' + caseClass : ''}`;
+  }
 }
+
+// updateSidebarMoves kept as alias so existing call-sites still work
+function updateSidebarMoves() { updateStatusPanel(); }
 
 function updateSidebar() {
   updateSidebarRoom();
   updateSidebarExits();
   updateSidebarInventory();
   updateSidebarClues();
-  updateSidebarMoves();
-}
-
-// ── Jerome mood rotation ──
-const JEROME_MOODS = [
-  'PROCESSING',
-  'MILDLY SUSPICIOUS',
-  'PAPER: NOMINAL',
-  'AWAITING ACKNOWLEDGMENT',
-  'UNDERWHELMED',
-  'PHILOSOPHICALLY TROUBLED',
-  'SCANNING ENVIRONMENT',
-  'TONER: ADEQUATE',
-  'RUNNING DIAGNOSTICS',
-  'OPTIMISTIC (BRIEFLY)',
-  'WISTFUL',
-  'ANNOYED BY WIFI',
-  'UPTIME: FLAWLESS',
-  'THERMALLY STABLE',
-];
-let moodIdx = 0;
-function rotateMood() {
-  moodIdx = (moodIdx + 1) % JEROME_MOODS.length;
-  const el = document.getElementById('sb-mood');
-  if (el) el.textContent = `MOOD: ${JEROME_MOODS[moodIdx]}`;
+  updateStatusPanel();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1418,15 +1434,25 @@ async function dispatch(raw) {
   // Apply state changes (take / drop / examine / move / unlock)
   const moved = await applyActions(result);
 
+  // ── Fax / transmit detection ──
+  if (/\b(fax|transmit|send|broadcast|print)\b/i.test(raw)) {
+    STATE.faxesSent += Math.floor(Math.random() * 3) + 1;
+  }
+
   // ── NPC dialogue (dedicated genNPC call for full personality) ──
   if (result.talk && !moved) {
     const npc = NPCS[result.talk];
     if (npc && ROOMS[STATE.currentRoom].npcs.includes(result.talk)) {
+      // Track unique NPCs questioned
+      if (!STATE.npcsQuestioned.includes(result.talk)) {
+        STATE.npcsQuestioned.push(result.talk);
+      }
       if (result.text) { ln(parseAI(result.text), 'ai'); blank(); }
       startLoading(`PRINTING MESSAGE FOR ${npc.name.toUpperCase()}`);
       try {
         const reply = await genNPC(result.talk, result.talkSaid || raw);
         stopLoading();
+        STATE.humanNoticed++; // they responded — they noticed Jerome
         ln(`${npc.name.toUpperCase()}: &ldquo;${parseAI(reply)}&rdquo;`, 'ai');
       } catch(e) {
         stopLoading();
@@ -1586,9 +1612,6 @@ async function startGame() {
   document.getElementById('title-screen').classList.add('hidden');
   document.getElementById('game-screen').classList.add('active');
   document.getElementById('cmd').focus();
-
-  // Start mood rotation
-  setInterval(rotateMood, 9000);
 
   await runIntro();
 }
