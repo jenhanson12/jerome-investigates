@@ -1153,10 +1153,10 @@ async function genNPC(npcId, playerSaid) {
   const clueCtx = STATE.cluesFound.length
     ? `Jerome has already found: ${STATE.cluesFound.map(c => ITEMS[c].name).join(', ')}.`
     : 'Jerome has found no clues yet.';
-  const npcSys = `You are playing ${npc.fullName} in a retro text adventure game.\n\n${npc.personality}\n\nThe investigator is JEROME, a sentient 1992 fax machine. He communicates by printing messages on thermal paper and holding them up. Most people find this unusual but roll with it.\n\nRules:\n• Stay strictly in character — funny, strange, human\n• Naturally drop your character's relevant clue into the conversation (not as a blunt announcement)\n• Keep response under 5 sentences\n• React to the fact that a fax machine is interviewing you`;
+  const npcSys = `You are playing ${npc.fullName} in a retro text adventure game.\n\n${npc.personality}\n\nThe investigator is JEROME, a sentient 1992 fax machine. He communicates by printing messages on thermal paper and holding them up. Most people find this unusual but roll with it.\n\nRules:\n• Stay strictly in character — funny, strange, human\n• Naturally drop your character's relevant clue into the conversation (not as a blunt announcement)\n• 3–4 sentences maximum — always end on a complete sentence, never mid-thought\n• React to the fact that a fax machine is interviewing you`;
   return callAPI(npcSys,
     `Jerome holds up a printed message: "${playerSaid}"\n\n${clueCtx}\nVariety seed: ${sessionSeed}\n\nRespond as ${npc.name}.`,
-    200);
+    300);
 }
 
 // ── Generate victory screen ──
