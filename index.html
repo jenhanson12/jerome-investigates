@@ -1317,6 +1317,7 @@ async function callAIInterpreter(rawInput) {
 
 async function applyActions(result) {
   let moved = false;
+  const took = [];
 
   // Vault unlock via explicit USE
   if (result.unlockVault && !STATE.flags.vaultUnlocked && STATE.currentRoom === 'reception') {
@@ -1366,6 +1367,7 @@ async function applyActions(result) {
     if (room.items.includes(id) && ITEMS[id]?.takeable) {
       room.items = room.items.filter(i => i !== id);
       STATE.inventory.push(id);
+      took.push(id);
       if (ITEMS[id].isClue && !STATE.cluesFound.includes(id)) {
         STATE.cluesFound.push(id);
         ln(`[ CLUE LOGGED: ${ITEMS[id].name} ]`, 'success');
@@ -1394,7 +1396,7 @@ async function applyActions(result) {
   }
 
   updateSidebar();
-  return moved;
+  return { moved, took };
 }
 
 // ── Meta / UI commands (hardcoded, no AI needed) ──────────
@@ -1583,7 +1585,7 @@ async function dispatch(raw) {
   stopLoading();
 
   // Apply state changes (take / drop / examine / move / unlock)
-  const moved = await applyActions(result);
+  const { moved, took } = await applyActions(result);
 
   // ── Fax / transmit detection ──
   if (/\b(fax|transmit|send|broadcast|print)\b/i.test(raw)) {
@@ -1643,8 +1645,28 @@ async function dispatch(raw) {
   }
 
   // ── Narrative for all other actions ──
-  // Fallback: if the AI returned empty text and nothing else happened, show a terse Jerome line
-  const narrative = result.text || (moved ? '' : `Jerome processes the input. He produces no output. This is, he notes, a first.`);
+  const UNRECOGNISED = [
+    `Jerome considers this. He finds no actionable interpretation. He logs it anyway.`,
+    `Jerome processes the input carefully. He arrives at nothing. He is used to this.`,
+    `The request does not map to any known procedure. Jerome files it under "human behaviour" and moves on.`,
+    `Jerome stares at this input for a full 0.3 seconds. It remains opaque. He continues.`,
+    `Unclear. Jerome does not say this aloud. He thinks it loudly.`,
+  ];
+  let narrative = result.text;
+  if (!narrative && took.length > 0) {
+    // AI returned empty text but a take succeeded — confirm it in Jerome's voice
+    const names = took.map(id => ITEMS[id].name).join(' and the ');
+    const pickups = [
+      `Jerome acquires the ${names}. He notes its potential relevance. He notes everything.`,
+      `The ${names} is now in Jerome's possession. He is, briefly, pleased about this.`,
+      `Jerome takes the ${names}. Quietly. No one notices. As usual.`,
+      `Jerome secures the ${names}. Evidence, possibly. Trophy, definitely.`,
+    ];
+    narrative = pickups[Math.floor(Math.random() * pickups.length)];
+  }
+  if (!narrative && !moved) {
+    narrative = UNRECOGNISED[Math.floor(Math.random() * UNRECOGNISED.length)];
+  }
   if (narrative) {
     ln(parseAI(narrative), moved ? 'dim' : 'ai');
     blank();
