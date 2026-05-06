@@ -1219,8 +1219,10 @@ async function displayRoom(skipAI = false) {
   if (!skipAI) {
     startLoading('SCANNING');
     try {
+      const visibleItems = room.items.filter(i=>!STATE.inventory.includes(i)).map(i=>ITEMS[i].name).join(', ')||'none';
+      const people = room.npcs.map(n=>NPCS[n].name).join(', ')||'no one';
       const desc = await callAPI(JEROME_VOICE,
-        `Describe "${room.name}" for Jerome's ${room.visitCount <= 1 ? 'first' : 'return'} visit.\n\nFacts: ${room.facts}\nVisible items: ${room.items.filter(i=>!STATE.inventory.includes(i)).map(i=>ITEMS[i].name).join(', ')||'none'}\nPeople present: ${room.npcs.map(n=>NPCS[n].name).join(', ')||'no one'}\nVariety seed: ${sessionSeed}\n\nWrite 2–3 atmospheric sentences from Jerome's perspective. Include one Jerome aside.`, 180);
+        `Describe "${room.name}" for Jerome's ${room.visitCount <= 1 ? 'first' : 'return'} visit.\n\nFacts: ${room.facts}\nVisible items: ${visibleItems}\nPeople present: ${people}\nVariety seed: ${sessionSeed}\n\nWrite 2–3 atmospheric sentences from Jerome's perspective. Include one Jerome aside. Do NOT mention exits, directions, or where to go next — exits are listed separately.`, 180);
       stopLoading();
       ln(parseAI(desc), 'ai');
     } catch(e) {
