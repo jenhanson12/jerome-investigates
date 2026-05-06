@@ -215,11 +215,9 @@
     /* ASCII art panel */
     #art-panel {
       flex-shrink: 0;
-      padding: .55rem 1.25rem .4rem;
-      border-bottom: 1px solid var(--border);
+      padding: .7rem 1.6rem .6rem;
+      border-bottom: 2px solid var(--border);
       background: rgba(0,0,0,.2);
-      display: flex;
-      justify-content: center;
     }
     #ascii-art {
       white-space: pre;
@@ -240,10 +238,10 @@
       overflow-x: hidden;
       padding: .9rem 1.6rem 1rem;
       scrollbar-width: thin;
-      scrollbar-color: var(--fg-sub) transparent;
+      scrollbar-color: var(--border) transparent;
     }
     #output::-webkit-scrollbar { width: 4px; }
-    #output::-webkit-scrollbar-thumb { background: var(--fg-sub); border-radius: 2px; }
+    #output::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
     #output::-webkit-scrollbar-track { background: transparent; }
 
     /* Input bar — focal point, min 44px tall */
@@ -254,8 +252,9 @@
       gap: 0;
       background: var(--bg-input);
       border-top: 2px solid var(--fg);
-      padding: .75rem 1.25rem;
+      padding: .75rem 1.6rem;
       min-height: 44px;
+      margin: 0 0 .5rem;
     }
     #prompt-label {
       flex-shrink: 0;
@@ -295,7 +294,7 @@
     .ln-success  { color: var(--fg-accent); }
     .ln-ai       { color: var(--fg-bright); }
     .ln-dim      { color: var(--fg-sub); }
-    .ln-room     { color: var(--fg-title); letter-spacing: .14em; font-size: 1em; font-weight: bold; }
+    .ln-room     { color: #ffffff; letter-spacing: .18em; font-size: 1.1em; font-weight: bold; text-shadow: 0 0 10px var(--glow-g); }
     .ln-exits    { color: var(--fg-sub); }
     .ln-items    { color: var(--fg-sub); }
     .ln-npcs     { color: var(--fg-bright); }
@@ -323,10 +322,10 @@
       overflow-y: auto;
       min-height: 0;
       scrollbar-width: thin;
-      scrollbar-color: var(--fg-sub) transparent;
+      scrollbar-color: var(--border) transparent;
     }
     .sb-section.sb-scroll::-webkit-scrollbar { width: 3px; }
-    .sb-section.sb-scroll::-webkit-scrollbar-thumb { background: var(--fg-sub); }
+    .sb-section.sb-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     .sb-label {
       font-size: 11px;
@@ -1738,7 +1737,7 @@ async function runIntro() {
   }
 
   hr();
-  ln(`Type HELP for commands. Type LOOK to survey your surroundings.`, 'dim');
+  ln(`Jerome is ready. He has always been ready. Type HELP if you need guidance. He will not judge you. Much.`, 'dim');
   hr();
   blank();
 
