@@ -202,22 +202,23 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: .35rem 1.25rem;
-      border-bottom: 1px solid var(--border);
+      padding: .65rem 1.6rem;
+      border-bottom: 1px solid var(--fg);
       background: rgba(0,0,0,.35);
       flex-shrink: 0;
-      font-size: 12px;
-      letter-spacing: .08em;
-      color: var(--fg-sub);
+      font-size: 13px;
+      letter-spacing: .09em;
+      color: var(--fg-title);
     }
-    #left-titlebar .tb-right { color: var(--fg-sub); }
+    #left-titlebar .tb-right { color: var(--fg-title); }
 
     /* ASCII art panel */
     #art-panel {
       flex-shrink: 0;
-      padding: .7rem 1.6rem .6rem;
+      padding: .7rem 1.6rem .6rem 1.6rem;
       border-bottom: 2px solid var(--border);
       background: rgba(0,0,0,.2);
+      overflow-x: auto;
     }
     #ascii-art {
       white-space: pre;
@@ -1224,7 +1225,7 @@ async function displayRoom(skipAI = false) {
       ln(parseAI(desc), 'ai');
     } catch(e) {
       stopLoading();
-      ln(`[API unavailable: ${e.message}]`, 'error');
+      ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
     }
   }
 
@@ -1572,7 +1573,7 @@ async function dispatch(raw) {
     result = await callAIInterpreter(raw);
   } catch(e) {
     stopLoading();
-    ln(`[API error: ${e.message}]`, 'error');
+    ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
     blank();
     updateSidebarMoves();
     return;
@@ -1604,7 +1605,7 @@ async function dispatch(raw) {
         ln(`${npc.name.toUpperCase()}: &ldquo;${parseAI(reply)}&rdquo;`, 'ai');
       } catch(e) {
         stopLoading();
-        ln(`[API error: ${e.message}]`, 'error');
+        ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
       }
       blank();
       updateSidebarMoves();
