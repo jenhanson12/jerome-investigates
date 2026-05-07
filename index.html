@@ -1200,8 +1200,8 @@ async function genNPC(npcId, playerSaid, extraCtx = '') {
 async function genVictory() {
   const clueList = STATE.cluesFound.map(c => ITEMS[c].name).join(', ');
   return callAPI(JEROME_VOICE,
-    `Jerome has solved the mystery. Dr. Marcus Finley stole the Chronos Crystal to sell it to Nexus Corporation for $2.3 million. He used Dr. Voss's badge (left in her coat pocket) and the Institute's Temporal Dampener, which also erased Voss's memory of the evening — making her look guilty. The Nexus Corp visitor was arranged by Finley, not Miriam, despite the shared surname. Jerome pieced it together from a hidden contract, a fax he intercepted in his own home, Gerald's quiet notebook, and thirty-two years of being ignored in exactly the right place.\n\nEvidence gathered: ${clueList}\nTotal moves: ${STATE.moves}\n\nWrite Jerome's 5–7 sentence victory monologue. Deadpan, quietly moved. Note that being overlooked in the storage room for thirty-two years was his greatest investigative asset. Reference the intercepted fax — Jerome was the relay for Finley's extension all along. End with Jerome acknowledging, without sentimentality, that he deserves more credit than he will receive. He is at peace with this.`,
-    320);
+    `Jerome has solved the mystery. Dr. Marcus Finley stole the Chronos Crystal to sell to Nexus Corp for $2.3M. He used Dr. Voss's spare badge and the Temporal Dampener — which erased her memory, making her look guilty. Jerome caught him via a fax he intercepted in his own home (he was always Finley's relay) and thirty-two years of being ignored in exactly the right place.\n\nEvidence: ${clueList}. Moves: ${STATE.moves}.\n\nWrite Jerome's victory statement in EXACTLY 3 short sentences. Deadpan and dry. Sentence 1: what the overlooked see that no one expects. Sentence 2: the fax intercept as the turning point. Sentence 3: Jerome deserves more credit. He will not receive it. He is fine.`,
+    220);
 }
 
 // ═══════════════════════════════════════════════════════════
