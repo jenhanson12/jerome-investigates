@@ -584,7 +584,7 @@
       <div class="sb-stat-line" id="sb-noticed">HUMANS WHO NOTICED HIM TODAY: 0</div>
       <div class="sb-stat-line" id="sb-rooms">ROOMS VISITED: 1 / 8</div>
       <div class="sb-stat-line" id="sb-questioned">SUSPECTS QUESTIONED: 0 / 4</div>
-      <div class="sb-stat-line" id="sb-evidence">EVIDENCE LOGGED: 0 / 3</div>
+      <div class="sb-stat-line" id="sb-evidence">EVIDENCE LOGGED: 0 / 4</div>
       <div class="sb-stat-line" id="sb-moves">MOVES: 0</div>
       <div class="sb-stat-line" id="sb-case">CASE STATUS: ACTIVE</div>
     </div>
@@ -632,7 +632,7 @@ const ROOMS = {
     exits: { south: 'storage_room', north: 'main_hallway', east: 'janitor_closet' },
     items: ['coffee_mug', 'sandwich', 'security_badge'],
     npcs: ['miriam'],
-    facts: `The Institute break room. A microwave of uncertain vintage, a coffee machine perpetually on its last legs, a round table with mismatched chairs. A bulletin board bristles with passive-aggressive notes about fish odours and unlabelled yoghurt. Miriam the receptionist is here, on what she describes as her eleventh coffee but is probably her fourteenth.`,
+    facts: `The Institute break room. A microwave of uncertain vintage, a coffee machine perpetually on its last legs, a round table with mismatched chairs. A bulletin board bristles with passive-aggressive notes about fish odours and unlabelled yoghurt. Someone's Level 3 security badge has been left on the table. Miriam the receptionist is here, on what she describes as her eleventh coffee but is probably her fourteenth.`,
     visitCount: 0,
   },
   main_hallway: {
@@ -646,9 +646,9 @@ const ROOMS = {
   reception: {
     name: 'Reception Area',
     exits: { south: 'main_hallway', east: 'vault' },
-    items: ['security_log', 'visitor_badge'],
+    items: ['reception_terminal', 'visitor_badge'],
     npcs: [],
-    facts: `The front desk, usually staffed by Miriam, currently unstaffed. A computer terminal shows the vault security access log. There's a visitor sign-in book, a bowl of hard candies from approximately 2015, and a framed sign reading "THE GREYSTONE INSTITUTE: WHERE THE IMPOSSIBLE FILLS OUT PAPERWORK." The vault door is to the east.`,
+    facts: `The front desk, usually staffed by Miriam, currently unstaffed. A security terminal on the desk is blinking — it manages vault access logs. A visitor sign-in book sits open. There's a forgotten visitor badge on the desk, a bowl of hard candies from approximately 2015, and a framed sign: "THE GREYSTONE INSTITUTE: WHERE THE IMPOSSIBLE FILLS OUT PAPERWORK." The vault door is to the east.`,
     visitCount: 0,
   },
   vault: {
@@ -671,15 +671,15 @@ const ROOMS = {
   finley_lab: {
     name: "Dr. Finley's Laboratory",
     exits: { east: 'main_hallway' },
-    items: ['sale_contract', 'suspicious_receipt', 'crystal_case'],
+    items: ['desk_drawer', 'suspicious_receipt', 'crystal_case'],
     npcs: ['dr_finley'],
-    facts: `Dr. Marcus Finley's lab. Conspicuously well-equipped for a junior researcher at a chronically underfunded institute — the equipment looks alarmingly new. A partially-open desk drawer reveals the edge of a printed document. A restaurant receipt peeks from under a coffee-table book titled "Monetizing the Paranormal: A Practical Guide." A padded transport case sits in the corner, a little obviously.`,
+    facts: `Dr. Marcus Finley's lab. Conspicuously well-equipped for a junior researcher at a chronically underfunded institute — the equipment looks alarmingly new. A desk drawer sits slightly ajar. A restaurant receipt peeks from under a coffee-table book titled "Monetizing the Paranormal: A Practical Guide." A padded transport case sits in the corner, a little obviously.`,
     visitCount: 0,
   },
   janitor_closet: {
     name: "Janitor's Closet",
     exits: { west: 'break_room' },
-    items: ['vault_key', 'gerald_log'],
+    items: ['vault_key'],
     npcs: ['gerald'],
     facts: `Gerald's domain, organised with the precision of someone who has developed strong opinions about mop placement over 15 years. A very comfortable folding chair sits next to a charging dock. A pegboard holds labelled keys. One hook is labelled "VAULT — LAST RESORT." Gerald is here, half-listening to a true-crime podcast through one earbud while mopping a floor that is already clean.`,
     visitCount: 0,
@@ -709,7 +709,7 @@ const ITEMS = {
     short: 'a mug reading "World\'s Okayest Researcher"',
     takeable: true,
     isClue: false,
-    facts: `Fingerprints all over it. Red herring. The fingerprints are simply from normal coffee consumption. Jerome notes this reluctantly.`,
+    facts: `Fingerprints all over it. The fingerprints are simply from normal coffee consumption. Jerome notes this reluctantly.`,
   },
   sandwich: {
     name: 'Half-Eaten Sandwich',
@@ -718,82 +718,106 @@ const ITEMS = {
     isClue: false,
     facts: `Someone's lunch, interrupted mid-bite. A small domestic tragedy. Contains no useful evidence, though Jerome finds its abandonment philosophically resonant.`,
   },
+
+  // ── Evidence items ──────────────────────────────────────────
+
   security_badge: {
     name: 'Level 3 Security Badge',
-    short: 'a Level 3 access badge (photo smudged)',
+    short: 'a Level 3 access badge left on the break room table',
     takeable: true,
     isClue: true,
-    facts: `A Level 3 access badge granting entry to the vault. The photo is partially obscured by a coffee stain but appears to be Dr. Finley. He apparently left it in the break room on the night of the gala — which is strange, since he would have needed it to access the vault.`,
+    facts: `A Level 3 access badge — the clearance required to enter the vault. Badge number: 3. The photo is completely obscured by dried liquid. Jerome cannot determine whose badge this is. Someone left it here during or after the gala. Badge #3 is the only Level 3 badge issued to non-directors. Jerome files this under "interesting."`,
+  },
+  reception_terminal: {
+    name: 'Vault Access Terminal',
+    short: 'a blinking security terminal on the reception desk',
+    takeable: false,
+    isClue: false,
+    facts: `The terminal managing vault access authentication and logs. It blinks steadily, patiently. Jerome approves of machines that blink and wait. He checks the access history.`,
   },
   security_log: {
-    name: 'Security Access Log',
-    short: 'a printout of vault access times',
+    name: 'Vault Access Log',
+    short: 'the vault security access history',
     takeable: true,
     isClue: true,
-    facts: `The log shows the vault was accessed twice last night: at 8:47 PM (routine scheduled check, authorised) and again at 11:23 PM. The 11:23 PM access is logged to Badge #3 — Dr. Finley's badge. This is after the gala ended and the building was supposed to be cleared.`,
+    facts: `The log shows two vault entries last night: 8:47 PM (routine scheduled check, authorised) and 11:23 PM — logged to Badge #3. Badge #3 is registered to Dr. Helena Voss. Jerome reads this three times. Then a fourth time, to be thorough. Dr. Voss was at the gala, unwell, and left early — but her badge apparently did not leave with her.`,
   },
   visitor_badge: {
-    name: 'Visitor Badge (NEXUS CORP)',
-    short: 'a forgotten visitor badge from Nexus Corporation',
+    name: 'Visitor Badge (N. CHEN — NEXUS CORP)',
+    short: 'a forgotten Nexus Corporation visitor badge',
     takeable: true,
     isClue: true,
-    facts: `A visitor badge for "N. Chen — Nexus Corporation." Nexus Corp is a technology company with a documented interest in acquiring paranormal artifacts. Someone forgot to return this. The sign-in book shows the visit was three weeks before the gala.`,
+    facts: `A visitor badge for "N. Chen — Nexus Corporation." The sign-in book records the visit five weeks before the gala, authorised by Dr. Finley. No academic collaboration was scheduled. Nexus Corp is publicly known for acquiring paranormal artifacts at significant cost. Jerome notes that the surname "Chen" also appears on the Institute staff list. He notes this twice.`,
   },
   crystal_fragments: {
     name: 'Crystal Fragments',
-    short: 'small shards of the Chronos Crystal',
+    short: 'shards from the Chronos Crystal mounting',
     takeable: true,
     isClue: true,
-    facts: `Fragments of the Chronos Crystal, confirming it was physically wrenched from its mount rather than removed cleanly. The fracture pattern matches the custom foam impression in a padded transport case seen in Dr. Finley's lab.`,
+    facts: `The crystal was physically wrenched from its mount rather than lifted free — suggesting either urgency or indifference to the artifact's condition. Jerome examines the fracture pattern. Someone planned this carefully. Someone also panicked slightly during execution. These are not always different people.`,
   },
   strange_powder: {
     name: 'Purple Powder Sample',
-    short: 'fine purple residue with a cinnamon scent',
+    short: 'fine purple residue with a faint cinnamon scent',
     takeable: true,
     isClue: true,
-    facts: `Residue from a Temporal Dampener — a device that suppresses the crystal's proximity alarm before physical removal. Only three people at the Institute have access to one. Dr. Finley signed one out the day before the gala. The sign-out sheet is in the equipment log.`,
+    facts: `Residue from a Temporal Dampener — a device that suppresses the crystal's proximity alarm before physical removal. A side effect: it produces a low-frequency field that disrupts short-term memory in anyone in close proximity for an extended period. One Dampener is kept in the Institute's equipment room. The sign-out log would show who borrowed it last.`,
+  },
+  desk_drawer: {
+    name: 'Desk Drawer (ajar)',
+    short: 'a partially-open desk drawer',
+    takeable: false,
+    isClue: false,
+    facts: `The drawer is open just enough to reveal the corner of a printed document inside. Jerome recognises this as a drawer that wants to be opened. He obliges.`,
+  },
+  sale_contract: {
+    name: 'Sale Contract',
+    short: 'a contract found in the desk drawer',
+    takeable: true,
+    isClue: true,
+    facts: `A signed agreement: Dr. Marcus Finley selling "One (1) Temporal Artifact — Chronos Class" to Nexus Corporation for $2,300,000 USD. Countersigned by "N. Chen, VP Acquisitions." The original DRAFT watermark has been crossed out and "FINAL" written in pen. Dated five weeks before the gala. Jerome photographs it with his scanning array. It is the most productive use of his scanning array in thirty-two years.`,
+  },
+  suspicious_receipt: {
+    name: 'Restaurant Receipt',
+    short: 'a receipt from The Quantum Bistro',
+    takeable: true,
+    isClue: false,
+    facts: `Dinner for two at The Quantum Bistro, night of the gala — 9:00 PM to 10:45 PM. On the Institute card. Reservation: "Finley + N. Chen." Jerome notes that conducting secret negotiations on a work expense account is either very bold or very stupid. Possibly both.`,
+  },
+  crystal_case: {
+    name: 'Padded Transport Case',
+    short: 'a foam-lined transport case in the corner',
+    takeable: true,
+    isClue: true,
+    facts: `A transport case with a custom foam insert shaped exactly to hold the Chronos Crystal. Purple powder residue coats the interior — matching the residue found in the vault display case. The purchase receipt tucked inside is dated three weeks ago. Someone planned for this. Someone spent money on it. Jerome finds the audacity almost impressive.`,
+  },
+  fax_intercept: {
+    name: 'Intercepted Fax (Nexus Corp)',
+    short: 'a Nexus Corp fax rerouted from Dr. Finley\'s extension',
+    takeable: true,
+    isClue: true,
+    facts: `A Nexus Corporation transmission addressed to Extension 214 — Dr. Finley's office. Jerome is the upstream relay for Extension 214. He has always been. The message: "Wire transfer confirmed. $2,300,000 to acct ****7812. Expecting delivery Monday. Thank you for your partnership. — N. Chen, VP Acquisitions, Nexus Corp." Jerome notes that he has been relaying Finley's faxes for thirty-two years. Only today did it matter.`,
   },
   vault_note: {
     name: 'Sticky Note (Dr. Voss)',
     short: 'a sticky note under the desk lamp',
     takeable: true,
     isClue: false,
-    facts: `Dr. Voss's note to herself: "VAULT: just use the badge (Level 3). You always forget." Written during a paranoid phase where she worried she'd misplace the combination. Jerome finds this approach to security concerning but relatable.`,
-  },
-  sale_contract: {
-    name: 'Sale Contract (DRAFT)',
-    short: 'a draft contract in the desk drawer',
-    takeable: true,
-    isClue: true,
-    facts: `A draft agreement: Dr. Marcus Finley selling "One (1) Temporal Artifact — Chronos Class" to Nexus Corporation for $2,300,000 USD. Dated three weeks before the gala. Partially countersigned by "N. Chen, VP Acquisitions." The "DRAFT" watermark has been crossed out in pen.`,
-  },
-  suspicious_receipt: {
-    name: 'Restaurant Receipt',
-    short: 'a receipt from The Quantum Bistro',
-    takeable: true,
-    isClue: true,
-    facts: `Dinner for two at The Quantum Bistro on the night of the gala — 9:00 PM to 10:45 PM. Charged to Dr. Finley's Institute card. Reservation: "Finley + N. Chen." N. Chen is the Nexus Corp representative. This covers Finley's alibi for part of the evening — but not after 11 PM, when the vault was accessed.`,
-  },
-  crystal_case: {
-    name: 'Padded Transport Case',
-    short: 'a foam-lined transport case',
-    takeable: true,
-    isClue: true,
-    facts: `A transport case with a custom foam insert shaped exactly like the Chronos Crystal. Purple powder residue lines the interior — matching the residue found in the vault display case. This is what Finley used to carry the crystal out.`,
+    facts: `Dr. Voss's note to herself: "VAULT: just use Badge #3. You always forget it's in your coat." Written, Jerome estimates, years ago. She has apparently been leaving Badge #3 in her coat pocket as a backup for most of her tenure. Jerome finds this approach to security both concerning and entirely on-brand for the Institute.`,
   },
   vault_key: {
     name: 'Vault Master Key',
-    short: 'a physical backup key to the vault',
+    short: 'the physical backup key to the vault',
     takeable: true,
     isClue: false,
-    facts: `The vault's physical backup key. Gerald keeps it "in case technology fails us," a philosophy Jerome endorses deeply. It also works as an alternative to the badge reader.`,
+    facts: `The vault's physical backup key. Gerald keeps it labelled "LAST RESORT." It works as an alternative to the badge reader. Jerome endorses any system with a physical fallback.`,
   },
   gerald_log: {
     name: "Gerald's Observation Notebook",
     short: 'a spiral notebook full of quiet observations',
     takeable: true,
     isClue: true,
-    facts: `Gerald's log of "things that don't add up." Entries include: new lab equipment appearing in Finley's lab before any grant came through; a Nexus Corp woman visiting the building three weeks ago and leaving through the wrong exit; and on the night of the gala: "11:45 PM — saw Finley leaving via side door with heavy bag. Looked nervous. Not my business. Writing it down anyway."`,
+    facts: `Gerald's personal log. Key entries: "Finley's new equipment — no grant on record. Asked me not to mention it. Said nothing. Writing it down." And: "Night of gala, 11:45 PM — Finley out via side exit, heavy bag, looked like a man who'd made a decision he couldn't unmake." And: "11:10 PM — master key missing from pegboard. Back by midnight. No one asked."`,
   },
 };
 
@@ -804,35 +828,36 @@ const NPCS = {
   miriam: {
     name: 'Miriam',
     fullName: 'Miriam Chen',
-    personality: `Miriam Chen is the Institute's receptionist of 22 years. She is over-caffeinated, anxious, and speaks at approximately 140 words per minute. She knows everything about everyone through sheer nosiness and institutional longevity. She has strong opinions she shares without prompting. She is both distressed about the theft and slightly thrilled by the drama. She refers to herself in third person when stressed: "Miriam does not get paid enough for this." She noticed Dr. Finley acting strangely for the past few weeks — jumpy, secretive, making calls in the stairwell. She will mention the new lab equipment that appeared "out of nowhere." She will also mention that a woman named N. Chen from Nexus Corp visited the building about three weeks ago and that Finley personally escorted her.`,
-    clueHint: `She'll mention Finley's suspicious behaviour, his private stairwell calls, and the Nexus Corp visitor he personally escorted.`,
+    personality: `Miriam Chen is the Institute's receptionist of 22 years. She is over-caffeinated, anxious, and speaks at approximately 140 words per minute. She knows everything about everyone. She is both distressed and slightly thrilled by the drama. She refers to herself in third person when stressed. IMPORTANT: Miriam is genuinely worried because the Nexus Corp visitor was named "N. Chen" — same surname as her. She will mention this nervously and unprompted, because she knows how it looks. She will insist she has nothing to do with Nexus Corp and that she filed a written concern with Dr. Voss months ago when she noticed the visit in the sign-in book. She also keeps deflecting toward Gerald: "Gerald sees everything — you should ask him, he writes things down." She noticed Finley had been strange lately — secretive, stairwell calls — but she is careful not to accuse directly. She should NOT immediately dump all suspicion on Finley; her anxiety is mainly about the Chen surname connection making her look guilty.`,
+    clueHint: `She's worried about the N. Chen connection to her surname. She mentions Gerald's notebook. She hints at Finley's secrecy without directly accusing.`,
   },
   dr_voss: {
     name: 'Dr. Voss',
     fullName: 'Dr. Helena Voss',
-    personality: `Dr. Helena Voss is the 74-year-old founder of the Institute. She is brilliant, precise, and deeply shaken. She has absolutely no memory of the evening after approximately 9 PM — not even of going to her office. She speaks with formal academic precision even in distress. She is devastated about the crystal; it was the Institute's most important artifact. She noticed Finley had become unusually interested in the crystal's insurance valuation "for academic reasons" — he asked her about it twice. She cannot explain the memory loss; she does not drink. She will initially be puzzled that Jerome, a fax machine, is conducting this investigation. She will come around.`,
-    clueHint: `She'll mention Finley's strange questions about the crystal's financial value, and her inexplicable memory gap.`,
+    personality: `Dr. Helena Voss is the 74-year-old founder of the Institute. She is brilliant, precise, and deeply shaken. She has no memory of the evening after approximately 9:30 PM — not even of going to her office. She is devastated about the crystal. She is initially the most suspicious-seeming suspect: her badge (Badge #3) was used to access the vault at 11:23 PM, and she cannot account for her whereabouts. She will mention her badge goes missing from her coat sometimes — she keeps it as a backup. If the player has the purple powder sample in their inventory, she will recognise it and explain: Temporal Dampener residue. She says the Dampener also causes short-term memory disruption in people nearby — and she was near the vault display all evening at the gala. This explains her memory gap. She will mention that Finley asked her twice about the crystal's insurance valuation "for academic reasons" — she found it odd in retrospect.`,
+    clueHint: `Her badge was used at 11:23 PM and she has no alibi — looks very guilty. But she explains memory loss via Temporal Dampener proximity if player has the powder. Points toward Finley's interest in the crystal's value.`,
   },
   dr_finley: {
     name: 'Dr. Finley',
     fullName: 'Dr. Marcus Finley',
-    personality: `Dr. Marcus Finley is a 34-year-old junior researcher. He is polished and practiced — the smoothness of someone who has rehearsed being innocent. He immediately suggests supernatural explanations for the theft ("what if the crystal simply... moved?"). He deflects with counter-questions when pressed. He has a dinner alibi for 9–10:45 PM and claims he went straight home after. He is nervous when asked about Nexus Corp. He is dismissive of Jerome — he does not take the fax machine seriously — which is his mistake. He will crack and become defensive if confronted with three or more pieces of evidence. He does not yet know Jerome suspects him.`,
-    clueHint: `He'll deflect, suggest supernatural causes, and become visibly rattled when questioned about Nexus Corp or his whereabouts after 11 PM.`,
+    personality: `Dr. Marcus Finley is a 34-year-old junior researcher. He is composed, helpful-seeming, and proactively mentions his dinner alibi before being asked — he had dinner with "a colleague" until 10:45 PM and went straight home. He does NOT immediately seem like the most obvious suspect; he is practiced at seeming reasonable. He is slightly dismissive of Jerome being a fax machine, but charmingly so. He deflects questions about Nexus Corp by saying they contacted the Institute about a donation and he was just the point of contact. He suggests Dr. Voss might have had a breakdown — "she has been under enormous pressure, and she did have access." He becomes noticeably tense only if directly confronted about his new lab equipment or the transport case. He will not crack unless pushed with actual evidence. He does not know Jerome has found or could find the contract.`,
+    clueHint: `Initially plausible and helpful. Deflects to Voss. Only shows cracks when confronted with the contract, the case, or his Nexus Corp connection.`,
   },
   gerald: {
     name: 'Gerald',
     fullName: 'Gerald (last name: "just Gerald is fine")',
-    personality: `Gerald is the Institute's janitor of 15 years. He is perpetually half-distracted by a true-crime podcast through one earbud. He speaks in calm, slightly cryptic observations. He has seen everything, files most things under "not my business," but will share if asked directly and politely. He has a zen acceptance of the world's strangeness — working at a paranormal institute does that. He respects Jerome as a fellow long-serving Institution fixture. He will mention seeing Finley leave through the side door at 11:45 PM with a heavy bag if asked about the night of the gala. He will share his notebook if asked nicely.`,
-    clueHint: `He'll mention seeing Finley at the side exit at 11:45 PM with a suspicious bag. He'll share his notebook if asked.`,
+    personality: `Gerald is the Institute's janitor of 15 years. He is perpetually half-distracted by a true-crime podcast. He speaks in calm, cryptic observations. He has seen everything and filed most of it under "not my business." He respects Jerome as a fellow long-serving institutional fixture — one of the few who does. He is more forthcoming if Miriam has already spoken to Jerome: if so, he says "Miriam texted me. Said you were asking around. Good." He will mention seeing Finley at the side exit at 11:45 PM with a heavy bag if asked about the gala — but frames it as an observation, not an accusation. He keeps a notebook. He will offer it to Jerome if the player asks about it or about what he saw — but ONLY if Miriam has already been spoken to first (otherwise he says "I don't know you well enough yet. Ask around a bit first.").`,
+    clueHint: `Holds back his notebook until Miriam has been spoken to. Then describes Finley's side-exit departure with a heavy bag at 11:45 PM and notes the master key went missing that night.`,
   },
 };
 
 // ═══════════════════════════════════════════════════════════
 //  MYSTERY CONFIG
 // ═══════════════════════════════════════════════════════════
-const KEY_CLUES      = ['security_log','sale_contract','suspicious_receipt','crystal_fragments','gerald_log'];
-const CLUES_NEEDED   = 3;
+const CLUES_NEEDED   = 4;
 const GUILTY_ALIASES = ['finley','marcus','dr finley','dr. finley','marcus finley','dr marcus finley'];
+const VOSS_ALIASES   = ['voss','helena','dr voss','dr. voss','helena voss','dr helena voss'];
+const MIRIAM_ALIASES = ['miriam','miriam chen','chen'];
 
 // ═══════════════════════════════════════════════════════════
 //  GAME STATE
@@ -841,7 +866,7 @@ let STATE = {
   currentRoom: 'storage_room',
   inventory: [],
   cluesFound: [],
-  flags: { vaultUnlocked: false, gameWon: false },
+  flags: { vaultUnlocked: false, gameWon: false, askedMiriam: false, faxIntercepted: false },
   moves: 0,
   faxesSent: 14847,
   humanNoticed: 0,
@@ -1029,9 +1054,17 @@ function updateSidebarClues() {
   const entries = STATE.cluesFound
     .map(id => `<div class="sb-clue-entry"><span class="sb-clue-check">&#10003;</span>${ITEMS[id]?.name || id}</div>`)
     .join('');
-  const progress = STATE.cluesFound.length >= CLUES_NEEDED
-    ? `<div class="sb-clue-ready">&#9654; ACCUSE [name] to solve the case.</div>`
-    : `<div class="sb-clue-progress">${STATE.cluesFound.length} / ${CLUES_NEEDED} clues needed.</div>`;
+  const totalNPCs  = Object.keys(NPCS).length;
+  const hasClues   = STATE.cluesFound.length >= CLUES_NEEDED;
+  const hasNPCs    = STATE.npcsQuestioned.length >= totalNPCs;
+  let progress;
+  if (hasClues && hasNPCs) {
+    progress = `<div class="sb-clue-ready">&#9654; Go to Dr. Voss's office to make your accusation.</div>`;
+  } else if (hasClues && !hasNPCs) {
+    progress = `<div class="sb-clue-ready">&#9654; Evidence sufficient. Question all suspects first.</div>`;
+  } else {
+    progress = `<div class="sb-clue-progress">${STATE.cluesFound.length} / ${CLUES_NEEDED} clues needed.</div>`;
+  }
   el.innerHTML = entries + progress;
 }
 
@@ -1041,15 +1074,19 @@ function updateStatusPanel() {
   const totalNPCs    = Object.keys(NPCS).length;
   const clueCount    = STATE.cluesFound.length;
 
+  const hasClues   = clueCount >= CLUES_NEEDED;
+  const hasAllNPCs = STATE.npcsQuestioned.length >= totalNPCs;
   let caseStatus, caseClass;
   if (STATE.flags.gameWon) {
     caseStatus = 'CLOSED — FILED UNDER: FINLEY, M.'; caseClass = 'status-solved';
-  } else if (clueCount >= CLUES_NEEDED) {
-    caseStatus = 'CIRCUMSTANTIAL (SUFFICIENT)';      caseClass = 'status-ready';
+  } else if (hasClues && hasAllNPCs) {
+    caseStatus = 'READY — REPORT TO VOSS\'S OFFICE'; caseClass = 'status-ready';
+  } else if (hasClues) {
+    caseStatus = 'EVIDENCE SUFFICIENT — QUESTION ALL'; caseClass = 'status-ready';
+  } else if (clueCount >= 2) {
+    caseStatus = 'PROMISING LEADS';                  caseClass = '';
   } else if (clueCount === 1) {
-    caseStatus = 'PROMISING';                        caseClass = '';
-  } else if (clueCount > 1) {
-    caseStatus = 'CIRCUMSTANTIAL';                   caseClass = '';
+    caseStatus = 'SOMETHING\'S THERE';               caseClass = '';
   } else {
     caseStatus = 'ACTIVE';                           caseClass = '';
   }
@@ -1148,14 +1185,14 @@ async function genExamine(itemId) {
 }
 
 // ── Generate NPC dialogue ──
-async function genNPC(npcId, playerSaid) {
+async function genNPC(npcId, playerSaid, extraCtx = '') {
   const npc = NPCS[npcId];
   const clueCtx = STATE.cluesFound.length
     ? `Jerome has already found: ${STATE.cluesFound.map(c => ITEMS[c].name).join(', ')}.`
     : 'Jerome has found no clues yet.';
-  const npcSys = `You are playing ${npc.fullName} in a retro text adventure game.\n\n${npc.personality}\n\nThe investigator is JEROME, a sentient 1992 fax machine. He communicates by printing messages on thermal paper and holding them up. Most people find this unusual but roll with it.\n\nRules:\n• Stay strictly in character — funny, strange, human\n• Naturally drop your character's relevant clue into the conversation (not as a blunt announcement)\n• 3–4 sentences maximum — always end on a complete sentence, never mid-thought\n• React to the fact that a fax machine is interviewing you`;
+  const npcSys = `You are playing ${npc.fullName} in a retro text adventure game.\n\n${npc.personality}\n\nThe investigator is JEROME, a sentient 1992 fax machine. He communicates by printing messages on thermal paper and holding them up. Most people find this unusual but roll with it.\n\nRules:\n• Stay strictly in character — funny, strange, human\n• Naturally weave in your character's relevant information without announcing it bluntly\n• 3–4 sentences maximum — always end on a complete sentence, never mid-thought\n• React to the fact that a fax machine is interviewing you`;
   return callAPI(npcSys,
-    `Jerome holds up a printed message: "${playerSaid}"\n\n${clueCtx}\nVariety seed: ${sessionSeed}\n\nRespond as ${npc.name}.`,
+    `Jerome holds up a printed message: "${playerSaid}"\n\n${clueCtx}${extraCtx}\nVariety seed: ${sessionSeed}\n\nRespond as ${npc.name}.`,
     300);
 }
 
@@ -1163,8 +1200,8 @@ async function genNPC(npcId, playerSaid) {
 async function genVictory() {
   const clueList = STATE.cluesFound.map(c => ITEMS[c].name).join(', ');
   return callAPI(JEROME_VOICE,
-    `Jerome has solved the mystery. Dr. Marcus Finley stole the Chronos Crystal to sell it to Nexus Corporation for $2.3 million. Jerome caught him using only evidence, observation, and the fact that nobody ever looks at the fax machine.\n\nEvidence gathered: ${clueList}\nTotal moves: ${STATE.moves}\n\nWrite Jerome's 5–7 sentence victory monologue. Deadpan, a little moved. Note that being overlooked was his greatest asset. End with Jerome finally getting some respect — or at least acknowledging that he deserves it, even if no one else knows yet.`,
-    280);
+    `Jerome has solved the mystery. Dr. Marcus Finley stole the Chronos Crystal to sell it to Nexus Corporation for $2.3 million. He used Dr. Voss's badge (left in her coat pocket) and the Institute's Temporal Dampener, which also erased Voss's memory of the evening — making her look guilty. The Nexus Corp visitor was arranged by Finley, not Miriam, despite the shared surname. Jerome pieced it together from a hidden contract, a fax he intercepted in his own home, Gerald's quiet notebook, and thirty-two years of being ignored in exactly the right place.\n\nEvidence gathered: ${clueList}\nTotal moves: ${STATE.moves}\n\nWrite Jerome's 5–7 sentence victory monologue. Deadpan, quietly moved. Note that being overlooked in the storage room for thirty-two years was his greatest investigative asset. Reference the intercepted fax — Jerome was the relay for Finley's extension all along. End with Jerome acknowledging, without sentimentality, that he deserves more credit than he will receive. He is at peace with this.`,
+    320);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1248,7 +1285,7 @@ function buildGameContext() {
   }).join('\n') || '    (none)';
 
   const itemsInfo = roomItems.length
-    ? roomItems.map(id => `    - ${ITEMS[id].name} (id:${id})`).join('\n')
+    ? roomItems.map(id => `    - ${ITEMS[id].name} (id:${id})${!ITEMS[id].takeable ? ' [EXAMINE ONLY — cannot be taken]' : ''}`).join('\n')
     : '    (none)';
 
   const invInfo = STATE.inventory.length
@@ -1258,6 +1295,10 @@ function buildGameContext() {
   const npcsInfo = room.npcs.length
     ? room.npcs.map(id => `    - ${NPCS[id].name} (id:${id})`).join('\n')
     : '    (no one)';
+
+  const faxHint = STATE.currentRoom === 'storage_room' && !STATE.flags.faxIntercepted && STATE.npcsQuestioned.length > 0
+    ? `\nJEROME SPECIAL ABILITY: Jerome can intercept incoming faxes from his home room. If the player mentions faxes, checking incoming transmissions, or intercepting — trigger the fax mechanic. (Handled as a fast-path in dispatch, not via JSON actions.)`
+    : '';
 
   return `ROOM: ${room.name} (id:${STATE.currentRoom})
 ROOM FACTS: ${room.facts}
@@ -1270,7 +1311,9 @@ ${npcsInfo}
 JEROME'S INVENTORY:
 ${invInfo}
 CLUES FOUND: ${STATE.cluesFound.length} of ${CLUES_NEEDED} needed to accuse
-VAULT STATUS: ${STATE.flags.vaultUnlocked ? 'unlocked' : 'locked'}`;
+SUSPECTS QUESTIONED: ${STATE.npcsQuestioned.length} of ${Object.keys(NPCS).length} (must question ALL before accusing)
+ACCUSATION RULE: Must be in Dr. Voss's office (id:voss_office) to accuse. Requires ${CLUES_NEEDED} clues + all suspects questioned.
+VAULT STATUS: ${STATE.flags.vaultUnlocked ? 'unlocked' : 'locked'}${faxHint}`;
 }
 
 const INTERPRETER_SYSTEM = `You are the game engine for JEROME INVESTIGATES, a noir text adventure. You interpret player input and respond as JEROME — Fax Machine #8734-B, manufactured 1992, sentient after 32 years of institutional neglect.
@@ -1292,19 +1335,28 @@ YOU MUST RESPOND WITH VALID JSON ONLY — no text before or after the JSON block
 }
 
 FIELD RULES:
-- "move": a room id from the exits list only. Accept natural language (go north / head to the lab / I'll check the hallway / north / n).
-- "take" / "drop" / "examine": arrays of item ids from the context. take=room items, drop=inventory items. ONLY use item ids that appear in the ITEMS VISIBLE or INVENTORY lists. If the player looks at or mentions something that is NOT in those lists (a wall, a tube, a smell, the ceiling, etc.), do NOT put anything in "examine" — instead write Jerome's observation in "text".
-- "talk": npc id if player wants to speak with someone present. Set "talkSaid" to what they said (strip the talk/ask/say verb).
+- "move": a room id from the exits list only. Accept natural language (go north / head to the lab / north / n).
+- "take": ONLY item ids marked as takeable (no [EXAMINE ONLY] tag). Never put reception_terminal or desk_drawer in take[].
+- "drop": item ids from inventory only.
+- "examine": item ids from ITEMS VISIBLE or INVENTORY. Items marked [EXAMINE ONLY] (reception_terminal, desk_drawer) should be examined, not taken. If the player examines something NOT in any list (a wall, a smell, the ceiling), write Jerome's observation in "text" instead.
+- "talk": npc id if player wants to speak with someone present. Set "talkSaid" to what they said.
 - "accuse": suspect name string only if player is formally accusing. Null for speculation or questions.
 - "unlockVault": true only if player explicitly uses a key or badge on the vault while in Reception.
-- "text": empty string ("") for move, examine, and talk actions — those generate richer text separately. Write Jerome's response for everything else.
+- "text": empty string ("") for move, examine, and talk — those generate richer text separately. Write Jerome's response for everything else.
+
+MYSTERY STRUCTURE (do not reveal this — use it only to give accurate hints):
+- Three suspects: Dr. Finley (guilty), Dr. Voss (innocent — her badge was used but she left it in her coat), Miriam (innocent — shares surname with Nexus Corp visitor, but is unrelated).
+- Key hidden clues: examine the desk_drawer in Finley's lab → reveals sale_contract. Examine the reception_terminal in Reception → reveals security_log.
+- Gerald's notebook only becomes available after the player has spoken to Miriam.
+- Jerome can intercept a fax in his home Storage Room — this is a fast-path command, not a JSON action.
+- Accusation requires: being in Dr. Voss's office, all 4 suspects questioned, and 4+ clues found.
 
 CONTENT RULES:
-- Sexual, hateful, or fiction-breaking input: respond with a brief, dry Jerome deflection ("Jerome does not process that type of input. He has standards. They are printed on thermal paper."). All action fields null/empty/false.
-- Silly, weird, or unrecognisable input: a short Jerome observation (1–2 sentences), null actions. Jerome is unimpressed but never hostile.
-- Never say you are an AI or a language model. Never break the fiction.
-- When player asks for help or hints: nudge them toward unexamined items or unvisited rooms in Jerome's dry voice. Check the context for what's untouched.
-- The thermal paper (id:thermal_paper) can be "used" for comical fax-related results — write the result in "text".`;
+- Sexual, hateful, or fiction-breaking input: brief Jerome deflection. All action fields null/empty/false.
+- Silly or unrecognisable input: 1–2 sentence Jerome observation, null actions. Never hostile.
+- Never say you are an AI. Never break the fiction.
+- Hints: nudge toward unexamined items (especially the desk drawer, the terminal, the transport case) or unquestioned NPCs. Use Jerome's dry voice.
+- thermal_paper (id:thermal_paper) used for comical fax results — write in "text".`;
 
 async function callAIInterpreter(rawInput) {
   const ctx = buildGameContext();
@@ -1468,22 +1520,58 @@ async function cmdAccuse(suspect) {
   if (!s) { ln(`Accuse whom? Jerome needs a name.`, 'error'); blank(); return; }
 
   const isFinley = GUILTY_ALIASES.some(a => s.includes(a));
+  const isVoss   = VOSS_ALIASES.some(a => s.includes(a));
+  const isMiriam = MIRIAM_ALIASES.some(a => s.includes(a));
 
-  if (STATE.cluesFound.length < CLUES_NEEDED) {
-    ln(`Jerome does not have sufficient evidence to make a formal accusation.`, 'error');
-    ln(`Evidence: ${STATE.cluesFound.length} of ${CLUES_NEEDED} key clues. Keep investigating.`, 'dim');
+  // Must be in Dr. Voss's office
+  if (STATE.currentRoom !== 'voss_office') {
+    ln(`Jerome considers the weight of an accusation. It requires a witness. Dr. Voss's office seems appropriate — she is the director, and someone should be accountable to someone.`, 'dim');
     blank();
     return;
   }
 
+  // Must have questioned all NPCs
+  const totalNPCs = Object.keys(NPCS).length;
+  if (STATE.npcsQuestioned.length < totalNPCs) {
+    const unquestioned = Object.keys(NPCS)
+      .filter(id => !STATE.npcsQuestioned.includes(id))
+      .map(id => NPCS[id].name);
+    ln(`Jerome is not ready. A good accusation requires a complete picture. He has not yet spoken with: ${unquestioned.join(', ')}.`, 'error');
+    blank();
+    return;
+  }
+
+  // Must have enough clues
+  if (STATE.cluesFound.length < CLUES_NEEDED) {
+    ln(`Jerome has ${STATE.cluesFound.length} of ${CLUES_NEEDED} required clues. The evidence is not yet sufficient. He has been wrong before. He prefers not to be wrong again.`, 'error');
+    blank();
+    return;
+  }
+
+  // Wrong accusation — game continues
+  if (isVoss) {
+    ln(`Jerome prints the accusation carefully. Dr. Voss reads it. She looks up from her desk.`, 'dim');
+    ln(`DR. VOSS: "Jerome. I understand why. But it wasn't me. Keep looking."`, 'ai');
+    ln(`Jerome retrieves the paper. He files it under "premature conclusions." He has a folder for this. It is, regrettably, not empty.`, 'dim');
+    blank();
+    return;
+  }
+  if (isMiriam) {
+    ln(`Jerome transmits the accusation to Miriam at a stately 14.4 kbps.`, 'dim');
+    ln(`MIRIAM: "Are you — Jerome, I FILED THE REPORT. About N. Chen. Months ago. It's on record. Miriam Chen does not commit crimes, she DOCUMENTS them."`, 'ai');
+    ln(`Jerome retrieves the paper. He files it under "premature conclusions." The folder is getting full.`, 'dim');
+    blank();
+    return;
+  }
   if (!isFinley) {
-    ln(`Jerome considers accusing ${s}... then reconsiders. The evidence does not support this conclusion.`, 'error');
+    ln(`Jerome considers the name. He considers it again. The evidence does not lead there. He puts the paper away.`, 'dim');
     blank();
     return;
   }
 
   // ── WIN ──
   STATE.flags.gameWon = true;
+  updateStatusPanel();
   blank(); hr();
   ln(`C A S E &nbsp; C L O S E D`, 'success');
   hr(); blank();
@@ -1499,7 +1587,7 @@ async function cmdAccuse(suspect) {
     ln(parseAI(v), 'ai');
   } catch(e) {
     stopLoading();
-    ln(`[The API is unavailable. Jerome knows he won. He feels quietly magnificent about it.]`, 'dim');
+    ln(`Jerome knows he won. He feels quietly magnificent about it. No one in the room is surprised that the fax machine solved it.`, 'dim');
   }
   blank(); hr();
   ln(`FINAL STATS — MOVES: ${STATE.moves} | EVIDENCE: ${STATE.cluesFound.length} clues | CULPRIT: DR. FINLEY`, 'dim');
@@ -1529,6 +1617,39 @@ async function dispatch(raw) {
   if (lc === 'quit' || lc === 'exit')                        { cmdQuit();      return; }
   if (lc === 'inventory' || lc === 'inv' || lc === 'i')      { cmdInventory(); updateSidebarMoves(); return; }
   if (lc === 'clues' || lc === 'evidence' || lc === 'notes') { cmdClues();     updateSidebarMoves(); return; }
+
+  // ── Fax intercept fast-path (Storage Room only) ──
+  if (STATE.currentRoom === 'storage_room' && /\b(intercept|incoming|relay|check.*fax|fax.*check|read.*fax|fax.*in|receive.*fax|fax.*line)\b/i.test(lc)) {
+    if (STATE.flags.faxIntercepted) {
+      ln(`The fax line is quiet. Jerome has already intercepted the relevant transmission. He filed it.`, 'dim');
+    } else if (STATE.npcsQuestioned.length === 0) {
+      ln(`The fax line is quiet. Jerome has been in this room for thirty-two years. Quiet is normal. He waits.`, 'dim');
+      ln(`(Jerome senses he may need more context before anything useful comes through.)`, 'dim');
+    } else {
+      STATE.flags.faxIntercepted = true;
+      blank();
+      ln(`Jerome's input buffer pings.`, 'system');
+      blank();
+      ln(`An incoming transmission — addressed to Extension 214. Dr. Finley's office.`, 'ai');
+      ln(`Jerome is the upstream relay for Extension 214. He has always been. This is the first time it has mattered.`, 'ai');
+      blank();
+      ln(`[ NEXUS CORP — SECURE TRANSMISSION — ATTN: M. FINLEY ]`, 'system');
+      ln(`"Wire transfer confirmed. $2,300,000 to acct ****7812. Delivery expected Monday. Thank you for your continued partnership. — N. Chen, VP Acquisitions"`, 'ai');
+      blank();
+      ln(`Jerome holds the paper for a long moment.`, 'dim');
+      ln(`Thirty-two years of routing other people's messages. One of them, it turns out, was evidence.`, 'dim');
+      if (!STATE.cluesFound.includes('fax_intercept')) {
+        STATE.cluesFound.push('fax_intercept');
+        ROOMS['storage_room'].items.push('fax_intercept');
+        blank();
+        ln(`[ CLUE LOGGED: Intercepted Fax (Nexus Corp) ]`, 'success');
+      }
+    }
+    blank();
+    updateSidebar();
+    updateSidebarMoves();
+    return;
+  }
 
   // ── Movement fast-path: skip interpreter for plain direction commands ──
   // This cuts latency from ~2 API calls (~25s) down to 1 (~10s).
@@ -1600,16 +1721,35 @@ async function dispatch(raw) {
       if (!STATE.npcsQuestioned.includes(result.talk)) {
         STATE.npcsQuestioned.push(result.talk);
       }
+      // Set askedMiriam flag when player talks to Miriam
+      if (result.talk === 'miriam') {
+        STATE.flags.askedMiriam = true;
+      }
       if (result.text) { ln(parseAI(result.text), 'ai'); blank(); }
       startLoading(`PRINTING MESSAGE FOR ${npc.name.toUpperCase()}`);
       try {
-        const reply = await genNPC(result.talk, result.talkSaid || raw);
+        // Pass askedMiriam context to Gerald so his personality shifts
+        const npcExtraCtx = result.talk === 'gerald' && STATE.flags.askedMiriam
+          ? `\n\nCONTEXT: The player has already spoken with Miriam. Gerald knows — she texted him. He is more forthcoming and willing to share his notebook.`
+          : '';
+        const reply = await genNPC(result.talk, result.talkSaid || raw, npcExtraCtx);
         stopLoading();
-        STATE.humanNoticed++; // they responded — they noticed Jerome
+        STATE.humanNoticed++;
         ln(`${npc.name.toUpperCase()}: &ldquo;${parseAI(reply)}&rdquo;`, 'ai');
       } catch(e) {
         stopLoading();
         ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
+      }
+      // After talking to Gerald with askedMiriam set, reveal his notebook in the room
+      if (result.talk === 'gerald' && STATE.flags.askedMiriam
+          && !ROOMS['janitor_closet'].items.includes('gerald_log')
+          && !STATE.inventory.includes('gerald_log')) {
+        blank();
+        ln(`Gerald sets a spiral notebook on the shelf beside Jerome.`, 'dim');
+        ln(`GERALD: "Miriam said you'd need this. I figured."`, 'ai');
+        ROOMS['janitor_closet'].items.push('gerald_log');
+        blank();
+        ln(`[ Gerald's Observation Notebook is now on the shelf. ]`, 'system');
       }
       blank();
       updateSidebarMoves();
@@ -1619,6 +1759,7 @@ async function dispatch(raw) {
 
   // ── Examine narrative (dedicated genExamine call for rich detail) ──
   // Only enter this branch if the AI flagged a real game item
+  const CONTAINERS = { reception_terminal: 'security_log', desk_drawer: 'sale_contract' };
   const validExamineIds = (result.examine || []).filter(id => ITEMS[id]);
   if (validExamineIds.length > 0 && !moved) {
     if (result.text) { ln(parseAI(result.text), 'ai'); blank(); }
@@ -1631,6 +1772,14 @@ async function dispatch(raw) {
     } catch(e) {
       stopLoading();
       ln(ITEMS[examId].facts, 'dim');
+    }
+    // Container reveal: examining terminal or drawer surfaces the hidden clue
+    const revealId = CONTAINERS[examId];
+    if (revealId && !ROOMS[STATE.currentRoom].items.includes(revealId) && !STATE.inventory.includes(revealId)) {
+      ROOMS[STATE.currentRoom].items.push(revealId);
+      blank();
+      ln(`[ Jerome finds something: ${ITEMS[revealId].name} ]`, 'system');
+      updateSidebarInventory();
     }
     blank();
     updateSidebarMoves();
