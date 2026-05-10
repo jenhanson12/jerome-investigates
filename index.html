@@ -996,6 +996,28 @@ function blank() {
 
 function hr() { ln('─'.repeat(52), 'hr'); }
 
+// Render multi-line AI text — splits on newlines, blank() between chunks
+function lnBlock(text, cls = 'ai') {
+  const chunks = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  if (!chunks.length) return;
+  chunks.forEach((chunk, i) => {
+    ln(parseAI(chunk), cls);
+    if (i < chunks.length - 1) blank();
+  });
+}
+
+// Render NPC speech — name on first line, blank between sentences
+function lnNPC(name, reply) {
+  const sentences = reply.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  if (!sentences.length) return;
+  sentences.forEach((s, i) => {
+    const prefix = i === 0 ? `${name}: &ldquo;` : '';
+    const suffix = i === sentences.length - 1 ? '&rdquo;' : '';
+    ln(parseAI(prefix + s + suffix), 'ai');
+    if (i < sentences.length - 1) blank();
+  });
+}
+
 function startLoading(msg = 'JEROME IS PROCESSING') {
   stopLoading();
   loadingEl = ln(msg + ' ...', 'loading');
@@ -1163,6 +1185,7 @@ Jerome's voice (you must write in this register):
 • Refers to himself occasionally in third person: "Jerome notes..." or "a fax machine does not forget"
 • Finds smartphones personally offensive but does not say so directly — he just sighs
 • Keeps descriptions SHORT and atmospheric. 2–4 sentences max unless asked otherwise.
+• Put each sentence on its own line (use \\n between sentences).
 • Always slip in at least one Jerome observation, complaint, or philosophical aside.`;
 
 // ── Generate room description ──
@@ -1190,7 +1213,7 @@ async function genNPC(npcId, playerSaid, extraCtx = '') {
   const clueCtx = STATE.cluesFound.length
     ? `Jerome has already found: ${STATE.cluesFound.map(c => ITEMS[c].name).join(', ')}.`
     : 'Jerome has found no clues yet.';
-  const npcSys = `You are playing ${npc.fullName} in a retro text adventure game.\n\n${npc.personality}\n\nThe investigator is JEROME, a sentient 1992 fax machine. He communicates by printing messages on thermal paper and holding them up. Most people find this unusual but roll with it.\n\nRules:\n• Stay strictly in character — funny, strange, human\n• Naturally weave in your character's relevant information without announcing it bluntly\n• 3–4 sentences maximum — always end on a complete sentence, never mid-thought\n• React to the fact that a fax machine is interviewing you`;
+  const npcSys = `You are playing ${npc.fullName} in a retro text adventure game.\n\n${npc.personality}\n\nThe investigator is JEROME, a sentient 1992 fax machine. He communicates by printing messages on thermal paper and holding them up. Most people find this unusual but roll with it.\n\nRules:\n• Stay strictly in character — funny, strange, human\n• Naturally weave in your character's relevant information without announcing it bluntly\n• 3–4 sentences maximum — always end on a complete sentence, never mid-thought\n• Put each sentence on its own line (separate with \\n)\n• React to the fact that a fax machine is interviewing you`;
   return callAPI(npcSys,
     `Jerome holds up a printed message: "${playerSaid}"\n\n${clueCtx}${extraCtx}\nVariety seed: ${sessionSeed}\n\nRespond as ${npc.name}.`,
     300);
@@ -1259,9 +1282,9 @@ async function displayRoom(skipAI = false) {
       const visibleItems = room.items.filter(i=>!STATE.inventory.includes(i)).map(i=>ITEMS[i].name).join(', ')||'none';
       const people = room.npcs.map(n=>NPCS[n].name).join(', ')||'no one';
       const desc = await callAPI(JEROME_VOICE,
-        `Describe "${room.name}" for Jerome's ${room.visitCount <= 1 ? 'first' : 'return'} visit.\n\nFacts: ${room.facts}\nVisible items: ${visibleItems}\nPeople present: ${people}\nVariety seed: ${sessionSeed}\n\nWrite 2–3 atmospheric sentences from Jerome's perspective. Include one Jerome aside. Do NOT mention exits, directions, or where to go next — exits are listed separately.`, 180);
+        `Describe "${room.name}" for Jerome's ${room.visitCount <= 1 ? 'first' : 'return'} visit.\n\nFacts: ${room.facts}\nVisible items: ${visibleItems}\nPeople present: ${people}\nVariety seed: ${sessionSeed}\n\nWrite 2–3 atmospheric sentences from Jerome's perspective. Include one Jerome aside. Put each sentence on its own line. Do NOT mention exits, directions, or where to go next — exits are listed separately.`, 180);
       stopLoading();
-      ln(parseAI(desc), 'ai');
+      lnBlock(desc);
     } catch(e) {
       stopLoading();
       ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
@@ -1584,7 +1607,7 @@ async function cmdAccuse(suspect) {
   try {
     const v = await genVictory();
     stopLoading();
-    ln(parseAI(v), 'ai');
+    lnBlock(v);
   } catch(e) {
     stopLoading();
     ln(`Jerome knows he won. He feels quietly magnificent about it. No one in the room is surprised that the fax machine solved it.`, 'dim');
@@ -1735,7 +1758,7 @@ async function dispatch(raw) {
         const reply = await genNPC(result.talk, result.talkSaid || raw, npcExtraCtx);
         stopLoading();
         STATE.humanNoticed++;
-        ln(`${npc.name.toUpperCase()}: &ldquo;${parseAI(reply)}&rdquo;`, 'ai');
+        lnNPC(npc.name.toUpperCase(), reply);
       } catch(e) {
         stopLoading();
         ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
@@ -1768,7 +1791,7 @@ async function dispatch(raw) {
     try {
       const desc = await genExamine(examId);
       stopLoading();
-      ln(parseAI(desc), 'ai');
+      lnBlock(desc);
     } catch(e) {
       stopLoading();
       ln(ITEMS[examId].facts, 'dim');
