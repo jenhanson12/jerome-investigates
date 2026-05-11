@@ -167,6 +167,66 @@
     .ts-forget:hover { color: var(--fg); }
     .ts-error { font-size: 11px; color: var(--fg-error); display: none; }
 
+    /* ── Two-option start panels ────────────── */
+    .ts-options {
+      display: flex;
+      gap: 1.2rem;
+      width: 100%;
+      max-width: 680px;
+      margin-top: .3rem;
+    }
+    .ts-option {
+      flex: 1;
+      border: 1px solid var(--border);
+      padding: 1.1rem 1.1rem 1.3rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      transition: border-color .2s;
+    }
+    .ts-option:hover { border-color: var(--fg-sub); }
+    .ts-option-title {
+      font-size: clamp(8px, 1vw, 12px);
+      letter-spacing: .2em;
+      color: var(--fg-accent);
+      text-shadow: 0 0 6px var(--glow-a);
+    }
+    .ts-option-desc {
+      font-size: clamp(8px, .9vw, 11px);
+      color: var(--fg-sub);
+      line-height: 1.7;
+      flex: 1;
+    }
+    .ts-btn-static {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--fg);
+      font-family: inherit;
+      font-size: 13px;
+      letter-spacing: .2em;
+      padding: .5rem 1rem;
+      cursor: pointer;
+      transition: background .15s, color .15s, box-shadow .15s;
+    }
+    .ts-btn-static:hover {
+      background: var(--fg);
+      color: var(--bg);
+      box-shadow: 0 0 16px var(--glow-g);
+    }
+    .ts-key-note {
+      font-size: 10px;
+      color: var(--fg-sub);
+      line-height: 1.5;
+      text-align: center;
+    }
+    #key-input:focus {
+      border-color: var(--fg) !important;
+      box-shadow: 0 0 10px var(--glow-g);
+    }
+    /* Mode colour in sidebar */
+    #sb-mode.mode-api    { color: var(--fg-bright); }
+    #sb-mode.mode-static { color: var(--fg-sub); }
+
     /* ═══════════════════════════════════════════
        GAME SCREEN — two-panel layout
     ═══════════════════════════════════════════ */
@@ -429,8 +489,9 @@
       .ts-title { font-size: clamp(13px, 4vw, 19px); }
       .ts-tagline { font-size: clamp(8px, 2.5vw, 11px); }
       .ts-premise { font-size: clamp(11px, 3.5vw, 14px); max-width: 100%; }
-      .ts-form { max-width: 100%; }
       #title-screen { padding: 1rem .75rem; }
+      .ts-options { flex-direction: column; gap: .9rem; max-width: 100%; }
+      .ts-option { padding: .9rem .9rem 1.1rem; }
 
       /* Game screen: single column */
       #game-screen.active { flex-direction: column; }
@@ -513,14 +574,40 @@
     <p><strong>No one ever looks at Jerome. This is his advantage.</strong></p>
   </div>
   <hr class="ts-divider">
-  <div class="ts-form">
-    <label for="key-input">ANTHROPIC API KEY — REQUIRED FOR NARRATIVE PROCESSING</label>
-    <input type="password" id="key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
-    <div class="ts-error" id="key-error"></div>
-    <button class="ts-btn" onclick="startGame()">[ INITIALIZE JEROME ]</button>
-    <span class="ts-forget" id="forget-btn" style="display:none" onclick="forgetKey()">
-      [ forget saved key ]
-    </span>
+
+  <div class="ts-options">
+
+    <!-- Option A: API key -->
+    <div class="ts-option">
+      <div class="ts-option-title">⟡ API-ENHANCED MODE</div>
+      <div class="ts-option-desc">
+        AI-generated room descriptions, live NPC conversations, and
+        variability each run. Requires an Anthropic API key.
+      </div>
+      <input type="password" id="key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false"
+             style="width:100%; background:var(--bg-input); border:1px solid var(--border); color:var(--fg-input);
+                    font-family:inherit; font-size:13px; padding:.45rem .9rem; outline:none;
+                    transition:border-color .2s, box-shadow .2s;">
+      <div class="ts-error" id="key-error"></div>
+      <button class="ts-btn" onclick="startGameWithKey()">[ INITIALIZE JEROME ]</button>
+      <div class="ts-key-note">
+        Key saved to this browser &nbsp;&middot;&nbsp; sent only to Anthropic
+      </div>
+      <span class="ts-forget" id="forget-btn" style="display:none" onclick="forgetKey()">
+        [ forget saved key ]
+      </span>
+    </div>
+
+    <!-- Option B: Static / no key -->
+    <div class="ts-option">
+      <div class="ts-option-title">⟡ STATIC MODE</div>
+      <div class="ts-option-desc">
+        Complete mystery with pre-written room descriptions and
+        scripted NPC responses. Fully solvable &mdash; no API key required.
+      </div>
+      <button class="ts-btn-static" onclick="startGameStatic()">[ PLAY WITHOUT A KEY ]</button>
+    </div>
+
   </div>
 </div>
 
@@ -581,6 +668,7 @@
       <div class="sb-stat-line" id="sb-evidence">EVIDENCE LOGGED: 0 / 4</div>
       <div class="sb-stat-line" id="sb-moves">MOVES: 0</div>
       <div class="sb-stat-line" id="sb-case">CASE STATUS: ACTIVE</div>
+      <div class="sb-stat-line mode-api" id="sb-mode">MODE: API-ENHANCED</div>
     </div>
 
   </div>
@@ -619,6 +707,7 @@ const ROOMS = {
     items: ['thermal_paper', 'old_manual'],
     npcs: [],
     facts: `Jerome's home for 32 years. Dusty shelves of obsolete office equipment. A single flickering fluorescent tube. Jerome's power cord snakes to a socket labeled "DO NOT UNPLUG (PLEASE)" — Jerome wrote the label himself. A filing cabinet in the corner has a sticky note reading "ASSET #8734-B — DO NOT DISCARD" on it. Jerome also wrote that one.`,
+    staticDesc: `Thirty-two years of uptime in this room.\n\nJerome is acquainted with every shelf, every flicker of the fluorescent tube, every dust mote. His home base. His command centre. His storage room. The fax line terminal glows quietly in the corner. It has always glowed. Today, for the first time, it may matter.`,
     visitCount: 0,
   },
   break_room: {
@@ -627,6 +716,7 @@ const ROOMS = {
     items: ['coffee_mug', 'sandwich', 'security_badge'],
     npcs: ['miriam'],
     facts: `The Institute break room. A microwave of uncertain vintage, a coffee machine perpetually on its last legs, a round table with mismatched chairs. A bulletin board bristles with passive-aggressive notes about fish odours and unlabelled yoghurt. Someone's Level 3 security badge has been left on the table. Miriam the receptionist is here, on what she describes as her eleventh coffee but is probably her fourteenth.`,
+    staticDesc: `The break room hums with institutional anxiety.\n\nMiriam is on her eleventh coffee — Jerome's sensors suggest this figure is understated by approximately three. The bulletin board is a passive-aggressive masterwork. A Level 3 security badge has been left on the table. This is not normal. Jerome notes it with professional gravity.`,
     visitCount: 0,
   },
   main_hallway: {
@@ -635,6 +725,7 @@ const ROOMS = {
     items: [],
     npcs: [],
     facts: `A long corridor with mint-green walls and portraits of past Institute directors, all of whom wear the haunted expression of people who have spent careers studying the paranormal while also filing quarterly expense reports. The institutional carpet has an unexplained stain near Dr. Finley's door. The smell of burnt coffee is omnipresent.`,
+    staticDesc: `The hallway stretches green and long, watched over by the portraits of past directors. Each wears the expression of someone who has deeply reconsidered their career path, but done so approximately twenty years too late.\n\nAn unexplained stain marks the carpet near Dr. Finley's door. Jerome has been noting it for three years. He notes it again now.`,
     visitCount: 0,
   },
   reception: {
@@ -643,6 +734,7 @@ const ROOMS = {
     items: ['reception_terminal', 'visitor_badge'],
     npcs: [],
     facts: `The front desk, usually staffed by Miriam, currently unstaffed. A security terminal on the desk is blinking — it manages vault access logs. A visitor sign-in book sits open. There's a forgotten visitor badge on the desk, a bowl of hard candies from approximately 2015, and a framed sign: "THE GREYSTONE INSTITUTE: WHERE THE IMPOSSIBLE FILLS OUT PAPERWORK." The vault door is to the east.`,
+    staticDesc: `The front desk stands empty — Miriam is in the break room. A vault access terminal blinks steadily on the desk.\n\nJerome respects machines that blink and wait. He considers this a shared professional language. A visitor badge sits forgotten on the desk. The vault door stands to the east, sealed and patient.`,
     visitCount: 0,
   },
   vault: {
@@ -651,6 +743,7 @@ const ROOMS = {
     items: ['crystal_fragments', 'strange_powder'],
     npcs: [],
     facts: `A climate-controlled security room. The main display case stands open, velvet lining disturbed. The Chronos Crystal is gone. Crystal shards glitter on the floor. A fine purple powder with a faint cinnamon scent coats the inside of the case and the surrounding shelf. The room smells of ozone and poor decisions.`,
+    staticDesc: `The display case stands open. The Chronos Crystal is absent.\n\nCrystal shards catch the light on the floor. Fine purple powder coats the inside of the case and smells faintly of cinnamon and ozone. Jerome photographs everything with his scanning array. This is the most productive use of his scanning array in thirty-two years.`,
     locked: true,
     visitCount: 0,
   },
@@ -660,6 +753,7 @@ const ROOMS = {
     items: ['vault_note'],
     npcs: ['dr_voss'],
     facts: `The office of Dr. Helena Voss, Institute founder. Framed diplomas, a mineral specimen collection, and more crystals on the shelves than seems professionally advisable. Dr. Voss sits at her desk staring at her hands, having asked herself "what happened last night?" approximately four hundred times. A sticky note is visible under her desk lamp.`,
+    staticDesc: `Dr. Voss sits behind her desk staring at her hands. She has been doing this, Jerome estimates, since approximately 6 AM.\n\nThe diplomas watch from the walls without comment. A sticky note is just visible beneath the desk lamp. Jerome can read it from here. He finds this gratifying.`,
     visitCount: 0,
   },
   finley_lab: {
@@ -668,6 +762,7 @@ const ROOMS = {
     items: ['desk_drawer', 'suspicious_receipt', 'crystal_case'],
     npcs: ['dr_finley'],
     facts: `Dr. Marcus Finley's lab. Conspicuously well-equipped for a junior researcher at a chronically underfunded institute — the equipment looks alarmingly new. A desk drawer sits slightly ajar. A restaurant receipt peeks from under a coffee-table book titled "Monetizing the Paranormal: A Practical Guide." A padded transport case sits in the corner, a little obviously.`,
+    staticDesc: `The lab equipment is conspicuously new for a junior researcher at a chronically underfunded institute. Jerome notes the discrepancy. He notes it twice.\n\nA desk drawer sits slightly ajar. A padded transport case occupies the corner in a way that appears calculated to be overlooked. Jerome is not fooled by things that try to appear unremarkable.`,
     visitCount: 0,
   },
   janitor_closet: {
@@ -676,6 +771,7 @@ const ROOMS = {
     items: ['vault_key'],
     npcs: ['gerald'],
     facts: `Gerald's domain, organised with the precision of someone who has developed strong opinions about mop placement over 15 years. A very comfortable folding chair sits next to a charging dock. A pegboard holds labelled keys. One hook is labelled "VAULT — LAST RESORT." Gerald is here, half-listening to a true-crime podcast through one earbud while mopping a floor that is already clean.`,
+    staticDesc: `Gerald's domain, organised with the precision of a man who has developed strong opinions about mop placement over fifteen years. A pegboard of labelled keys lines the wall. One hook reads: VAULT — LAST RESORT.\n\nGerald regards Jerome with quiet recognition. They are, in their way, colleagues.`,
     visitCount: 0,
   },
 };
@@ -824,24 +920,45 @@ const NPCS = {
     fullName: 'Miriam Chen',
     personality: `Miriam Chen is the Institute's receptionist of 22 years. She is over-caffeinated, anxious, and speaks at approximately 140 words per minute. She knows everything about everyone. She is both distressed and slightly thrilled by the drama. She refers to herself in third person when stressed. IMPORTANT: Miriam is genuinely worried because the Nexus Corp visitor was named "N. Chen" — same surname as her. She will mention this nervously and unprompted, because she knows how it looks. She will insist she has nothing to do with Nexus Corp and that she filed a written concern with Dr. Voss months ago when she noticed the visit in the sign-in book. She also keeps deflecting toward Gerald: "Gerald sees everything — you should ask him, he writes things down." She noticed Finley had been strange lately — secretive, stairwell calls — but she is careful not to accuse directly. She should NOT immediately dump all suspicion on Finley; her anxiety is mainly about the Chen surname connection making her look guilty.`,
     clueHint: `She's worried about the N. Chen connection to her surname. She mentions Gerald's notebook. She hints at Finley's secrecy without directly accusing.`,
+    staticLines: [
+      `Oh — a fax machine. Fine. I've had stranger mornings.\n\nSomebody took the crystal, Dr. Voss doesn't remember the evening, and there's a Nexus Corp visitor badge in the sign-in book with my surname on it. That is NOT me. I filed a written concern months ago. I have documentation.`,
+      `Miriam Chen does not commit crimes. She documents them.\n\nDr. Finley had been making private calls in the stairwell for weeks. Stairwell calls, Jerome. Also: ask Gerald. He keeps a notebook. He writes everything down.`,
+      `The N. Chen from Nexus Corp was authorised by Dr. Finley five weeks before the gala. I'd never met her. I flagged it. It is on record.\n\nHave you talked to Gerald yet? He notices things other people file under "not my business." He doesn't.`,
+    ],
   },
   dr_voss: {
     name: 'Dr. Voss',
     fullName: 'Dr. Helena Voss',
     personality: `Dr. Helena Voss is the 74-year-old founder of the Institute. She is brilliant, precise, and deeply shaken. She has no memory of the evening after approximately 9:30 PM — not even of going to her office. She is devastated about the crystal. She is initially the most suspicious-seeming suspect: her badge (Badge #3) was used to access the vault at 11:23 PM, and she cannot account for her whereabouts. She will mention her badge goes missing from her coat sometimes — she keeps it as a backup. If the player has the purple powder sample in their inventory, she will recognise it and explain: Temporal Dampener residue. She says the Dampener also causes short-term memory disruption in people nearby — and she was near the vault display all evening at the gala. This explains her memory gap. She will mention that Finley asked her twice about the crystal's insurance valuation "for academic reasons" — she found it odd in retrospect.`,
     clueHint: `Her badge was used at 11:23 PM and she has no alibi — looks very guilty. But she explains memory loss via Temporal Dampener proximity if player has the powder. Points toward Finley's interest in the crystal's value.`,
+    staticLines: [
+      `I have no memory after approximately 9:30 PM. I know how that sounds.\n\nMy Badge #3 — I keep it in my coat as a spare. Anyone who knew that could have used it. I don't know who else knew. Possibly several people.`,
+      `That purple powder. If it's Temporal Dampener residue — and I believe it is — the field disrupts short-term memory in anyone in close proximity for an extended period.\n\nI was near the vault display all evening at the gala. That explains my memory gap. It does not explain who used the Dampener, or who borrowed it from the equipment room.`,
+      `Dr. Finley asked me twice about the crystal's insurance valuation. Academic curiosity, he said.\n\nI am, in retrospect, revising my assessment of that comment.`,
+    ],
   },
   dr_finley: {
     name: 'Dr. Finley',
     fullName: 'Dr. Marcus Finley',
     personality: `Dr. Marcus Finley is a 34-year-old junior researcher. He is composed, helpful-seeming, and proactively mentions his dinner alibi before being asked — he had dinner with "a colleague" until 10:45 PM and went straight home. He does NOT immediately seem like the most obvious suspect; he is practiced at seeming reasonable. He is slightly dismissive of Jerome being a fax machine, but charmingly so. He deflects questions about Nexus Corp by saying they contacted the Institute about a donation and he was just the point of contact. He suggests Dr. Voss might have had a breakdown — "she has been under enormous pressure, and she did have access." He becomes noticeably tense only if directly confronted about his new lab equipment or the transport case. He will not crack unless pushed with actual evidence. He does not know Jerome has found or could find the contract.`,
     clueHint: `Initially plausible and helpful. Deflects to Voss. Only shows cracks when confronted with the contract, the case, or his Nexus Corp connection.`,
+    staticLines: [
+      `A fax machine. Innovative approach to an investigation.\n\nI had dinner at The Quantum Bistro until 10:45 PM — verifiable, if you need it verified. Went directly home. I'd honestly suggest focusing on Dr. Voss. She has access, history with the crystal, and frankly, she hasn't been herself lately.`,
+      `The transport case is for equipment storage — a separate project. Nexus Corp contacted the Institute about a potential donation and I was simply the point of contact. Standard protocol.`,
+      `I've been fully cooperative, Jerome. I'd encourage careful thinking before any formal statements. Evidence has to actually support a conclusion. That's just how evidence works.`,
+    ],
   },
   gerald: {
     name: 'Gerald',
     fullName: 'Gerald (last name: "just Gerald is fine")',
     personality: `Gerald is the Institute's janitor of 15 years. He is perpetually half-distracted by a true-crime podcast. He speaks in calm, cryptic observations. He has seen everything and filed most of it under "not my business." He respects Jerome as a fellow long-serving institutional fixture — one of the few who does. He is more forthcoming if Miriam has already spoken to Jerome: if so, he says "Miriam texted me. Said you were asking around. Good." He will mention seeing Finley at the side exit at 11:45 PM with a heavy bag if asked about the gala — but frames it as an observation, not an accusation. He keeps a notebook. He will offer it to Jerome if the player asks about it or about what he saw — but ONLY if Miriam has already been spoken to first (otherwise he says "I don't know you well enough yet. Ask around a bit first.").`,
     clueHint: `Holds back his notebook until Miriam has been spoken to. Then describes Finley's side-exit departure with a heavy bag at 11:45 PM and notes the master key went missing that night.`,
+    staticLocked: `Don't know you well enough yet. Ask around a bit first.`,
+    staticLines: [
+      `Miriam texted me. Said you were asking around. Good.\n\nNight of the gala — Finley left by the side exit at 11:45 PM. Heavy bag. The look of someone who'd made a decision they can't unmake. I noted it.`,
+      `Master key went missing from the pegboard that night. Back by midnight. I didn't see who took it. But I noted it.`,
+      `Read the notebook. It's all in there.`,
+    ],
   },
 };
 
@@ -960,6 +1077,8 @@ const ROOM_ART = {
 //  RUNTIME
 // ═══════════════════════════════════════════════════════════
 let apiKey       = '';
+let apiMode      = true;    // false = static (no key) mode
+let staticNPCIdx = {};      // tracks per-NPC line index in static mode
 let sessionSeed  = '';
 let processing   = false;
 let cmdHistory   = [];
@@ -1128,6 +1247,12 @@ function updateStatusPanel() {
     caseEl.textContent = `CASE STATUS: ${caseStatus}`;
     caseEl.className   = `sb-stat-line${caseClass ? ' ' + caseClass : ''}`;
   }
+
+  const modeEl = document.getElementById('sb-mode');
+  if (modeEl) {
+    modeEl.textContent = `MODE: ${apiMode ? 'API-ENHANCED' : 'STATIC'}`;
+    modeEl.className   = `sb-stat-line ${apiMode ? 'mode-api' : 'mode-static'}`;
+  }
 }
 
 // updateSidebarMoves kept as alias so existing call-sites still work
@@ -1279,17 +1404,22 @@ async function displayRoom(skipAI = false) {
   blank();
 
   if (!skipAI) {
-    startLoading('SCANNING');
-    try {
-      const visibleItems = room.items.filter(i=>!STATE.inventory.includes(i)).map(i=>ITEMS[i].name).join(', ')||'none';
-      const people = room.npcs.map(n=>NPCS[n].name).join(', ')||'no one';
-      const desc = await callAPI(JEROME_VOICE,
-        `Describe "${room.name}" for Jerome's ${room.visitCount <= 1 ? 'first' : 'return'} visit.\n\nFacts: ${room.facts}\nVisible items: ${visibleItems}\nPeople present: ${people}\nVariety seed: ${sessionSeed}\n\nWrite 2–3 atmospheric sentences from Jerome's perspective. Include one Jerome aside. Separate each sentence with a blank line. Do NOT mention exits, directions, or where to go next — exits are listed separately.`, 180);
-      stopLoading();
-      lnBlock(desc);
-    } catch(e) {
-      stopLoading();
-      ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
+    if (!apiMode) {
+      // Static mode — use pre-written description
+      lnBlock(room.staticDesc || room.facts, 'dim');
+    } else {
+      startLoading('SCANNING');
+      try {
+        const visibleItems = room.items.filter(i=>!STATE.inventory.includes(i)).map(i=>ITEMS[i].name).join(', ')||'none';
+        const people = room.npcs.map(n=>NPCS[n].name).join(', ')||'no one';
+        const desc = await callAPI(JEROME_VOICE,
+          `Describe "${room.name}" for Jerome's ${room.visitCount <= 1 ? 'first' : 'return'} visit.\n\nFacts: ${room.facts}\nVisible items: ${visibleItems}\nPeople present: ${people}\nVariety seed: ${sessionSeed}\n\nWrite 2–3 atmospheric sentences from Jerome's perspective. Include one Jerome aside. Separate each sentence with a blank line. Do NOT mention exits, directions, or where to go next — exits are listed separately.`, 180);
+        stopLoading();
+        lnBlock(desc);
+      } catch(e) {
+        stopLoading();
+        ln(`Jerome attempts to process this. Something is blocking the signal. He waits. He is good at waiting.`, 'dim');
+      }
     }
   }
 
@@ -1524,9 +1654,16 @@ function cmdHelp() {
   examples.forEach(e => ln(e, 'normal'));
   blank();
   ln(`  Always available:`, 'dim');
-  ln(`    inventory (i)  ·  clues  ·  help  ·  quit`, 'normal');
+  ln(`    inventory (i)  ·  clues  ·  hint  ·  help  ·  quit`, 'normal');
   blank();
   ln(`  ↑ / ↓ arrow keys cycle command history.`, 'dim');
+  blank();
+  if (!apiMode) {
+    ln(`  [ Running in STATIC mode — pre-written descriptions. ]`, 'system');
+    ln(`    Type RESET KEY to return to the start screen.`, 'dim');
+  } else {
+    ln(`    Type RESET KEY to clear your saved API key.`, 'dim');
+  }
   blank();
 }
 
@@ -1622,6 +1759,227 @@ async function cmdAccuse(suspect) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  STATIC MODE HELPERS
+// ═══════════════════════════════════════════════════════════
+
+function staticHint() {
+  const clues = STATE.cluesFound.length;
+  const room  = STATE.currentRoom;
+  if (room === 'finley_lab' && !STATE.cluesFound.includes('sale_contract'))
+    return `The desk drawer is slightly ajar. Jerome's scanning mechanism suggests it may contain documents of interest.`;
+  if (room === 'reception' && !STATE.cluesFound.includes('security_log'))
+    return `The vault access terminal is blinking. Terminal logs can be illuminating about who accessed what, and when.`;
+  if (room === 'storage_room' && !STATE.flags.faxIntercepted && STATE.npcsQuestioned.length > 0)
+    return `Jerome is the upstream relay for Extension 214. There may be incoming transmissions worth intercepting.`;
+  if (!STATE.npcsQuestioned.includes('miriam'))
+    return `Miriam Chen has worked here 22 years and knows everyone. Starting with the receptionist is standard procedure.`;
+  if (STATE.flags.askedMiriam && !STATE.npcsQuestioned.includes('gerald'))
+    return `Gerald the janitor has been here 15 years. He observes. He writes things down. Miriam mentioned him for a reason.`;
+  if (clues >= CLUES_NEEDED && STATE.npcsQuestioned.length >= Object.keys(NPCS).length)
+    return `Jerome has sufficient evidence and has spoken with everyone. Dr. Voss's office is the place to make a formal accusation.`;
+  if (clues >= CLUES_NEEDED)
+    return `The evidence is sufficient, but Jerome must speak with all persons of interest before making an accusation.`;
+  return `Examine objects carefully. Talk to the staff. Jerome notices what others overlook.`;
+}
+
+function handleStaticNPC(npcId) {
+  const npc = NPCS[npcId];
+  if (!STATE.npcsQuestioned.includes(npcId)) STATE.npcsQuestioned.push(npcId);
+  if (npcId === 'miriam') STATE.flags.askedMiriam = true;
+
+  if (npcId === 'gerald') {
+    if (!STATE.flags.askedMiriam) {
+      lnNPC('GERALD', npc.staticLocked);
+      blank();
+      // Doesn't count until gate is open
+      STATE.npcsQuestioned = STATE.npcsQuestioned.filter(id => id !== 'gerald');
+      return;
+    }
+    const idx = staticNPCIdx['gerald'] || 0;
+    lnNPC('GERALD', npc.staticLines[Math.min(idx, npc.staticLines.length - 1)]);
+    blank();
+    if (idx === 0
+        && !ROOMS['janitor_closet'].items.includes('gerald_log')
+        && !STATE.inventory.includes('gerald_log')) {
+      ln(`Gerald sets a spiral notebook on the shelf beside Jerome.`, 'dim');
+      ln(`GERALD: "Miriam said you'd need this. I figured."`, 'ai');
+      ROOMS['janitor_closet'].items.push('gerald_log');
+      blank();
+      ln(`[ Gerald's Observation Notebook is now on the shelf. ]`, 'system');
+    }
+    staticNPCIdx['gerald'] = Math.min(idx + 1, npc.staticLines.length - 1);
+    STATE.humanNoticed++;
+    updateSidebar();
+    return;
+  }
+
+  const idx = staticNPCIdx[npcId] || 0;
+  lnNPC(npc.name.toUpperCase(), npc.staticLines[idx % npc.staticLines.length]);
+  blank();
+  staticNPCIdx[npcId] = (idx + 1) % npc.staticLines.length;
+  STATE.humanNoticed++;
+  updateSidebar();
+}
+
+async function handleStaticCommand(raw) {
+  const lc   = raw.trim().toLowerCase();
+  const room = ROOMS[STATE.currentRoom];
+  const CONTAINERS = { reception_terminal: 'security_log', desk_drawer: 'sale_contract' };
+
+  // ── Look / re-describe room ──
+  if (/^(?:look|l|look around|examine room)$/.test(lc)) {
+    await displayRoom();
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Vault unlock (explicit USE command) ──
+  if (/\b(use|unlock|open)\b/.test(lc) && /\b(vault|door)\b/.test(lc) && STATE.currentRoom === 'reception') {
+    const hasKey = STATE.inventory.includes('security_badge') || STATE.inventory.includes('vault_key');
+    if (hasKey) {
+      const used = STATE.inventory.includes('security_badge') ? 'security_badge' : 'vault_key';
+      ROOMS['vault'].locked = false;
+      STATE.flags.vaultUnlocked = true;
+      ln(`Jerome uses the ${ITEMS[used].name} on the vault access panel.`, 'system');
+      ln(`A green light. A magnetic thunk. The vault is now accessible to the EAST.`, 'system');
+      blank();
+    } else {
+      ln(`The vault requires a Level 3 security badge or the master key.`, 'error');
+      blank();
+    }
+    updateSidebar();
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Examine ──
+  const examMatch = lc.match(/^(?:examine|look at|inspect|read|check|search|open)\s+(.+)$/);
+  if (examMatch) {
+    const itemId = findItem(examMatch[1]);
+    if (!itemId) {
+      ln(`Jerome cannot find that here.`, 'dim');
+      blank();
+      updateSidebarMoves();
+      return;
+    }
+    if (ITEMS[itemId].isClue && !STATE.cluesFound.includes(itemId)) {
+      const inScope = room.items.includes(itemId) || STATE.inventory.includes(itemId);
+      if (inScope) {
+        STATE.cluesFound.push(itemId);
+        ln(`[ CLUE LOGGED: ${ITEMS[itemId].name} ]`, 'success');
+        blank();
+      }
+    }
+    lnBlock(ITEMS[itemId].facts, 'dim');
+    const revealId = CONTAINERS[itemId];
+    if (revealId && !room.items.includes(revealId) && !STATE.inventory.includes(revealId)) {
+      room.items.push(revealId);
+      blank();
+      ln(`[ Jerome finds something: ${ITEMS[revealId].name} ]`, 'system');
+    }
+    blank();
+    updateSidebar();
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Take ──
+  const takeMatch = lc.match(/^(?:take|pick up|grab|get|acquire|collect)\s+(.+)$/);
+  if (takeMatch) {
+    const itemId = findItem(takeMatch[1], 'room');
+    if (itemId && ITEMS[itemId].takeable) {
+      room.items = room.items.filter(i => i !== itemId);
+      STATE.inventory.push(itemId);
+      if (ITEMS[itemId].isClue && !STATE.cluesFound.includes(itemId)) {
+        STATE.cluesFound.push(itemId);
+        ln(`[ CLUE LOGGED: ${ITEMS[itemId].name} ]`, 'success');
+        blank();
+      }
+      const names = ITEMS[itemId].name;
+      const pickups = [
+        `Jerome acquires the ${names}. He notes its potential relevance. He notes everything.`,
+        `The ${names} is now in Jerome's possession. He is, briefly, pleased about this.`,
+        `Jerome takes the ${names}. Quietly. No one notices. As usual.`,
+        `Jerome secures the ${names}. Evidence, possibly. Trophy, definitely.`,
+      ];
+      ln(pickups[Math.floor(Math.random() * pickups.length)], 'ai');
+      blank();
+    } else if (itemId && !ITEMS[itemId].takeable) {
+      ln(`The ${ITEMS[itemId].name} cannot be taken — only examined.`, 'dim');
+      blank();
+    } else {
+      ln(`Jerome cannot find that here.`, 'dim');
+      blank();
+    }
+    updateSidebar();
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Drop ──
+  const dropMatch = lc.match(/^(?:drop|put down|leave|discard)\s+(.+)$/);
+  if (dropMatch) {
+    const itemId = findItem(dropMatch[1], 'inv');
+    if (itemId) {
+      STATE.inventory = STATE.inventory.filter(i => i !== itemId);
+      room.items.push(itemId);
+      ln(`Jerome sets down the ${ITEMS[itemId].name}.`, 'ai');
+      blank();
+    } else {
+      ln(`Jerome isn't carrying that.`, 'dim');
+      blank();
+    }
+    updateSidebar();
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Talk / ask ──
+  const talkMatch = lc.match(/^(?:talk(?:\s+to)?|speak(?:\s+to)?|ask(?:\s+about)?|question|address|approach|interview)\s+(.+)$/);
+  if (talkMatch) {
+    const npcId = findNPC(talkMatch[1]);
+    if (npcId && room.npcs.includes(npcId)) {
+      handleStaticNPC(npcId);
+    } else {
+      ln(`Jerome doesn't see that person here.`, 'dim');
+      blank();
+    }
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Hint ──
+  if (/^(?:hint|help me|what should i do|what now|what next|i'm stuck|stuck)$/.test(lc)) {
+    blank();
+    ln(`[ JEROME OBSERVES: ]`, 'system');
+    ln(staticHint(), 'dim');
+    blank();
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Accuse ──
+  const accuseMatch = lc.match(/^accuse\s+(.+)$/);
+  if (accuseMatch) {
+    await cmdAccuse(accuseMatch[1]);
+    updateSidebarMoves();
+    return;
+  }
+
+  // ── Fallback ──
+  const UNRECOGNISED = [
+    `Jerome considers this. He finds no actionable interpretation. He logs it anyway.`,
+    `Jerome processes the input carefully. He arrives at nothing. He is used to this.`,
+    `The request does not map to any known procedure. Jerome files it under "human behaviour" and moves on.`,
+    `Jerome stares at this input for a full 0.3 seconds. It remains opaque. He continues.`,
+    `Unclear. Jerome does not say this aloud. He thinks it loudly.`,
+  ];
+  ln(UNRECOGNISED[Math.floor(Math.random() * UNRECOGNISED.length)], 'dim');
+  blank();
+  updateSidebarMoves();
+}
+
+// ═══════════════════════════════════════════════════════════
 //  MAIN DISPATCHER — AI-DRIVEN
 // ═══════════════════════════════════════════════════════════
 async function dispatch(raw) {
@@ -1642,6 +2000,15 @@ async function dispatch(raw) {
   if (lc === 'quit' || lc === 'exit')                        { cmdQuit();      return; }
   if (lc === 'inventory' || lc === 'inv' || lc === 'i')      { cmdInventory(); updateSidebarMoves(); return; }
   if (lc === 'clues' || lc === 'evidence' || lc === 'notes') { cmdClues();     updateSidebarMoves(); return; }
+  if (lc === 'reset key' || lc === 'resetkey' || lc === 'reset api key') {
+    localStorage.removeItem('jerome_key');
+    apiKey = '';
+    ln(`Jerome clears the saved API key from local storage.`, 'dim');
+    ln(`Reloading to the start screen in a moment…`, 'dim');
+    blank();
+    setTimeout(() => window.location.reload(), 1400);
+    return;
+  }
 
   // ── Fax intercept fast-path (Storage Room only) ──
   if (STATE.currentRoom === 'storage_room' && /\b(intercept|incoming|relay|check.*fax|fax.*check|read.*fax|fax.*in|receive.*fax|fax.*line)\b/i.test(lc)) {
@@ -1713,6 +2080,12 @@ async function dispatch(raw) {
     updateSidebar();
     await displayRoom();
     updateSidebarMoves();
+    return;
+  }
+
+  // ── Static mode: no API — use local parser ──
+  if (!apiMode) {
+    await handleStaticCommand(raw);
     return;
   }
 
@@ -1947,20 +2320,33 @@ async function runIntro() {
 // ═══════════════════════════════════════════════════════════
 //  GAME START / TITLE SCREEN
 // ═══════════════════════════════════════════════════════════
-async function startGame() {
-  const keyInput = document.getElementById('key-input').value.trim();
-  const errEl    = document.getElementById('key-error');
-  if (!keyInput) { errEl.textContent = 'API key required.'; errEl.style.display = 'block'; return; }
-  errEl.style.display = 'none';
-  apiKey      = keyInput;
-  sessionSeed = Math.random().toString(36).substring(2, 10);
-  localStorage.setItem('jerome_key', apiKey);
 
+function beginGame() {
+  sessionSeed = Math.random().toString(36).substring(2, 10);
   document.getElementById('title-screen').classList.add('hidden');
   document.getElementById('game-screen').classList.add('active');
   document.getElementById('cmd').focus();
+  runIntro();
+}
 
-  await runIntro();
+async function startGameWithKey() {
+  const keyInput = document.getElementById('key-input').value.trim();
+  const errEl    = document.getElementById('key-error');
+  if (!keyInput) {
+    errEl.textContent = 'Enter your Anthropic API key above.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  apiKey  = keyInput;
+  apiMode = true;
+  localStorage.setItem('jerome_key', apiKey);
+  beginGame();
+}
+
+function startGameStatic() {
+  apiMode = false;
+  beginGame();
 }
 
 function forgetKey() {
@@ -1975,17 +2361,22 @@ function toggleTheme() {
     document.body.classList.contains('amber') ? 'GREEN' : 'AMBER';
 }
 
-// ── Restore saved key on load ──
+// ── Restore saved key on load — auto-start if key exists ──
 window.addEventListener('load', () => {
   const saved = localStorage.getItem('jerome_key');
   if (saved) {
-    document.getElementById('key-input').value = saved;
-    document.getElementById('forget-btn').style.display = 'block';
+    // Skip the title screen entirely and go straight into the game
+    apiKey  = saved;
+    apiMode = true;
+    beginGame();
+    return;
   }
-  // Also allow Enter to start game from the key field
+  // No saved key — show title screen, wire up key input
   document.getElementById('key-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') startGame();
+    if (e.key === 'Enter') startGameWithKey();
   });
+  // Focus the key input
+  document.getElementById('key-input').focus();
 });
 </script>
 </body>
