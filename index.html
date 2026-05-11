@@ -59,13 +59,7 @@
       );
       pointer-events: none;
     }
-    /* ── CRT vignette ────────────────────────── */
-    body::after {
-      content: '';
-      position: fixed; inset: 0; z-index: 8001;
-      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.72) 100%);
-      pointer-events: none;
-    }
+    /* CRT vignette removed — was dimming edge text */
 
     /* ── Theme toggle ────────────────────────── */
     #theme-btn {
@@ -996,9 +990,9 @@ function blank() {
 
 function hr() { ln('─'.repeat(52), 'hr'); }
 
-// Render multi-line AI text — splits on newlines, blank() between chunks
+// Render multi-line AI text — splits on real newlines OR literal \n, blank() between chunks
 function lnBlock(text, cls = 'ai') {
-  const chunks = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const chunks = text.split(/\\n|\n/).map(s => s.trim()).filter(Boolean);
   if (!chunks.length) return;
   chunks.forEach((chunk, i) => {
     ln(parseAI(chunk), cls);
@@ -1008,7 +1002,7 @@ function lnBlock(text, cls = 'ai') {
 
 // Render NPC speech — name on first line, blank between sentences
 function lnNPC(name, reply) {
-  const sentences = reply.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const sentences = reply.split(/\\n|\n/).map(s => s.trim()).filter(Boolean);
   if (!sentences.length) return;
   sentences.forEach((s, i) => {
     const prefix = i === 0 ? `${name}: &ldquo;` : '';
